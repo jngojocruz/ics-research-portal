@@ -1056,11 +1056,25 @@ function normalizeRemoteEntry(e) {
 /* ── DATA FETCH ───────────────────────────────────────────────────── */
 async function fetchRemote() {
   if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') return [];
-  try {
-    const r = await fetch(APPS_SCRIPT_URL + '?action=getAll');
-    const d = await r.json();
-    return d.entries || [];
-  } catch { return []; }
+  // Apps Script GET requires JSONP to avoid CORS errors when hosted on GitHub Pages
+  return new Promise((resolve) => {
+    const cbName = '_gsCb_' + Date.now();
+    const script = document.createElement('script');
+    const timer = setTimeout(() => {
+      delete window[cbName];
+      script.remove();
+      resolve([]);
+    }, 8000);
+    window[cbName] = (data) => {
+      clearTimeout(timer);
+      delete window[cbName];
+      script.remove();
+      resolve(data.entries || []);
+    };
+    script.src = APPS_SCRIPT_URL + '?action=getAll&callback=' + cbName;
+    script.onerror = () => { clearTimeout(timer); delete window[cbName]; resolve([]); };
+    document.head.appendChild(script);
+  });
 }
 
 function merge(remote, local) {
@@ -4762,8 +4776,10 @@ function doPost(e) {
 
 function doGet(e) {
   const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-  if (!sheet) return ContentService.createTextOutput(JSON.stringify({entries:[]}))
-    .setMimeType(ContentService.MimeType.JSON);
+  const callback = e && e.parameter && e.parameter.callback;
+  const empty    = callback ? callback + '(' + JSON.stringify({entries:[]}) + ')' : JSON.stringify({entries:[]});
+  if (!sheet) return ContentService.createTextOutput(empty)
+    .setMimeType(callback ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
   const rows    = sheet.getDataRange().getValues();
   const headers = rows[0];
   const entries = rows.slice(1).map(r => {
@@ -4771,9 +4787,11 @@ function doGet(e) {
     headers.forEach((h,i) => obj[h.toLowerCase().replace(/ |\//g,'_')] = r[i]);
     return obj;
   });
+  const payload = JSON.stringify({entries});
+  const output  = callback ? callback + '(' + payload + ')' : payload;
   return ContentService
-    .createTextOutput(JSON.stringify({entries}))
-    .setMimeType(ContentService.MimeType.JSON);
+    .createTextOutput(output)
+    .setMimeType(callback ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
 }
 ════════════════════════════════════════════════════════════════════════
 -->
