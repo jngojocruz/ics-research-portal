@@ -1438,7 +1438,6 @@ function esc(s) {
 }
 
 /* ── SEED DEMO DATA ───────────────────────────────────────────────── */
-function seedDemo() {
 const REAL_PUBLICATIONS = [
   {
     "year": "2025",
@@ -4723,6 +4722,8 @@ const REAL_PUBLICATIONS = [
     "pages": ""
   }
 ];
+
+function seedDemo() {
   // Seed data is kept in memory only (not in sessionStorage)
   ALL_ENTRIES = [...REAL_PUBLICATIONS];
 }
