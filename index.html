@@ -997,447 +997,7 @@
 ────────────────────────────────────────────────────────────────────── */
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby7P9UNLz5A7cIakojpsVGuA6RK4z1ttfXp8mXoZqMxJtkQsYwCzi1n6ii1Ej7OnO4C/exec';
 
-/* ── PAGE NAVIGATION ──────────────────────────────────────────────── */
-const PAGE_META = {
-  dashboard:    ['Dashboard', 'Research activity overview'],
-  publications: ['Publications', 'Complete faculty research outputs'],
-  submit:       ['Submit Research', 'Record a new publication or conference presentation']
-};
-function showPage(id, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-' + id).classList.add('active');
-  if (btn) btn.classList.add('active');
-  const [title, meta] = PAGE_META[id] || ['', ''];
-  document.getElementById('topbarTitle').textContent = title;
-  document.getElementById('topbarMeta').textContent  = meta;
-  if (id === 'publications') renderPublications();
-}
-
-/* ── LOCAL CACHE ──────────────────────────────────────────────────── */
-function saveLocal(entry) {
-  const list = JSON.parse(sessionStorage.getItem('ics') || '[]');
-  list.unshift(entry);
-  sessionStorage.setItem('ics', JSON.stringify(list.slice(0, 200)));
-}
-function getLocal() { return JSON.parse(sessionStorage.getItem('ics') || '[]'); }
-
-
-/* ── NORMALIZE ENTRIES FROM GOOGLE SHEET ─────────────────────────── */
-// Sheet returns compressed header names; map them back to what renderers expect
-function normalizeRemoteEntry(e) {
-  // If already in native format (has conference_name or journal_name), skip
-  if (e.conference_name !== undefined || e.journal_name !== undefined) return e;
-  const isJour = (e.category || '').toLowerCase().includes('journal');
-  return {
-    submitted_at:      e.timestamp        || e.submitted_at || '',
-    category:          e.category         || '',
-    pub_type:          e.publication_type || e.pub_type     || '',
-    submitter:         e.submitter        || '',
-    email:             e.email            || '',
-    title:             e.title            || '',
-    authors:           e.authors          || '',
-    year:              e.year             || '',
-    conference_name:   isJour ? ''        : (e.venue || ''),
-    journal_name:      isJour ? (e.venue || '') : '',
-    conference_location: isJour ? ''      : (e.location_volume || ''),
-    volume_issue:      isJour ? (e.location_volume || '') : '',
-    conference_date:   isJour ? ''        : (e.date_pages || ''),
-    journal_pages:     isJour ? (e.date_pages || '') : '',
-    pages:             isJour ? ''        : (e.pages_doi || ''),
-    doi_url:           isJour ? (e.pages_doi || '') : '',
-    pub_link:          e.link_to_publication || e.pub_link  || '',
-    abstract:          e.abstract         || '',
-    funding:           e.funding          || '',
-    indexed_in:        e.indexed_in       || '',
-  };
-}
-
-/* ── DATA FETCH ───────────────────────────────────────────────────── */
-async function fetchRemote() {
-  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') return [];
-  // Apps Script GET requires JSONP to avoid CORS errors when hosted on GitHub Pages
-  return new Promise((resolve) => {
-    const cbName = '_gsCb_' + Date.now();
-    const script = document.createElement('script');
-    const timer = setTimeout(() => {
-      delete window[cbName];
-      script.remove();
-      resolve([]);
-    }, 8000);
-    window[cbName] = (data) => {
-      clearTimeout(timer);
-      delete window[cbName];
-      script.remove();
-      resolve(data.entries || []);
-    };
-    script.src = APPS_SCRIPT_URL + '?action=getAll&callback=' + cbName;
-    script.onerror = () => { clearTimeout(timer); delete window[cbName]; resolve([]); };
-    document.head.appendChild(script);
-  });
-}
-
-function merge(remote, local) {
-  const seen = new Set();
-  return [...local, ...remote].filter(e => {
-    const k = (e.title||'').trim().toLowerCase() + '|' + (e.submitter||'');
-    if (seen.has(k)) return false;
-    seen.add(k); return true;
-  });
-}
-
-let ALL_ENTRIES = [];
-let currentFilter = 'all';
-
-async function loadAll() {
-  const rawRemote = await fetchRemote();
-  const remote = rawRemote.map(normalizeRemoteEntry);
-  // Merge: real data + remote (Google Sheet) + local new submissions
-  ALL_ENTRIES = merge(remote, [...REAL_PUBLICATIONS, ...getLocal()]);
-  updateStats();
-  renderFeed();
-  drawChart();
-  renderPublications();
-}
-
-/* ── STATS ────────────────────────────────────────────────────────── */
-function updateStats() {
-  const yr = new Date().getFullYear();
-  const conf = ALL_ENTRIES.filter(e => e.category === 'Conference Proceedings Publication').length;
-  const jour = ALL_ENTRIES.filter(e => e.category === 'Journal Article').length;
-  const yrCount = ALL_ENTRIES.filter(e =>
-    String(e.year) === String(yr) ||
-    (e.submitted_at && e.submitted_at.startsWith(String(yr)))
-  ).length;
-
-  animNum('sTotal', ALL_ENTRIES.length);
-  animNum('sConf',  conf);
-  animNum('sJour',  jour);
-  animNum('sYear',  yrCount);
-  document.getElementById('sYearLbl').textContent = `Submissions in ${yr}`;
-}
-
-function animNum(id, target) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  let n = 0, step = Math.max(1, Math.floor(target / 18));
-  const t = setInterval(() => {
-    n = Math.min(n + step, target);
-    el.textContent = n;
-    if (n >= target) clearInterval(t);
-  }, 28);
-}
-
-/* ── RECENT FEED ──────────────────────────────────────────────────── */
-function renderFeed() {
-  const list = document.getElementById('feedList');
-  const entries = ALL_ENTRIES.slice(0, 8);
-  if (!entries.length) {
-    list.innerHTML = '<li class="feed-empty">No submissions yet.</li>';
-    return;
-  }
-  list.innerHTML = entries.map((e, i) => {
-    const isJour = e.category === 'Journal Article';
-    const venue  = isJour ? (e.journal_name||'') : (e.conference_name||'');
-    const dateStr = e.submitted_at
-      ? new Date(e.submitted_at).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})
-      : (e.year || '');
-    return `<li class="feed-item" style="animation-delay:${i*.05}s">
-      <div class="feed-top">
-        <span class="feed-title-text">${esc(e.title||'—')}</span>
-        <span class="feed-badge ${isJour?'b-jour':'b-conf'}">${isJour?'Journal':'Conference'}</span>
-      </div>
-      <div class="feed-meta-row">
-        <span class="feed-author">${esc(e.authors||'')}</span>
-        ${venue ? `<span class="feed-dot">●</span><span class="feed-venue">${esc(venue)}</span>` : ''}
-      </div>
-      <div class="feed-date">${dateStr}</div>
-    </li>`;
-  }).join('');
-}
-
-/* ── LINE CHART ───────────────────────────────────────────────────── */
-function drawChart() {
-  const canvas = document.getElementById('chartCanvas');
-  const empty  = document.getElementById('chartEmpty');
-  if (!ALL_ENTRIES.length) {
-    canvas.style.display = 'none';
-    empty.style.display  = 'block';
-    return;
-  }
-  canvas.style.display = 'block';
-  empty.style.display  = 'none';
-
-  // build year buckets
-  const yearMap = {};
-  ALL_ENTRIES.forEach(e => {
-    const y = parseInt(e.year) || new Date(e.submitted_at||'').getFullYear();
-    if (!y || isNaN(y)) return;
-    yearMap[y] = (yearMap[y]||0) + 1;
-  });
-  const years = Object.keys(yearMap).sort();
-  if (years.length < 1) { canvas.style.display='none'; empty.style.display='block'; return; }
-
-  const counts = years.map(y => yearMap[y]);
-  const maxVal = Math.max(...counts, 1);
-
-  // responsive canvas sizing
-  const container = canvas.parentElement;
-  const W = container.clientWidth - 0;
-  const H = 220;
-  canvas.width  = W;
-  canvas.height = H;
-
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0,0,W,H);
-
-  const PAD = { top:20, right:20, bottom:44, left:40 };
-  const gW  = W - PAD.left - PAD.right;
-  const gH  = H - PAD.top  - PAD.bottom;
-
-  // grid lines
-  const gridCount = 4;
-  ctx.strokeStyle = '#e4e9f4';
-  ctx.lineWidth   = 1;
-  ctx.setLineDash([4,4]);
-  for (let i = 0; i <= gridCount; i++) {
-    const y = PAD.top + (gH * (1 - i/gridCount));
-    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left+gW, y); ctx.stroke();
-    // y-axis labels
-    ctx.fillStyle   = '#8b99b8';
-    ctx.font        = '11px DM Sans, sans-serif';
-    ctx.textAlign   = 'right';
-    ctx.fillText(Math.round(maxVal * i/gridCount), PAD.left-6, y+4);
-  }
-  ctx.setLineDash([]);
-
-  // compute points
-  const pts = years.map((y, i) => ({
-    x: PAD.left + (years.length > 1 ? (i/(years.length-1)) * gW : gW/2),
-    y: PAD.top  + gH * (1 - counts[i]/maxVal),
-    val: counts[i], yr: y
-  }));
-
-  // fill gradient
-  const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top+gH);
-  grad.addColorStop(0,   'rgba(21,71,192,.18)');
-  grad.addColorStop(1,   'rgba(21,71,192,0)');
-  ctx.beginPath();
-  ctx.moveTo(pts[0].x, PAD.top+gH);
-  pts.forEach(p => ctx.lineTo(p.x, p.y));
-  ctx.lineTo(pts[pts.length-1].x, PAD.top+gH);
-  ctx.closePath();
-  ctx.fillStyle = grad;
-  ctx.fill();
-
-  // line
-  ctx.beginPath();
-  ctx.moveTo(pts[0].x, pts[0].y);
-  if (pts.length > 2) {
-    for (let i=1; i<pts.length-1; i++) {
-      const cpX = (pts[i].x + pts[i+1].x)/2;
-      const cpY = (pts[i].y + pts[i+1].y)/2;
-      ctx.quadraticCurveTo(pts[i].x, pts[i].y, cpX, cpY);
-    }
-  }
-  ctx.lineTo(pts[pts.length-1].x, pts[pts.length-1].y);
-  ctx.strokeStyle = '#1547c0';
-  ctx.lineWidth   = 2.5;
-  ctx.stroke();
-
-  // dots + labels
-  pts.forEach(p => {
-    // outer ring
-    ctx.beginPath(); ctx.arc(p.x, p.y, 5.5, 0, Math.PI*2);
-    ctx.fillStyle = '#fff'; ctx.fill();
-    ctx.strokeStyle = '#1547c0'; ctx.lineWidth = 2.5; ctx.stroke();
-    // inner dot
-    ctx.beginPath(); ctx.arc(p.x, p.y, 2.5, 0, Math.PI*2);
-    ctx.fillStyle = '#1547c0'; ctx.fill();
-    // count label above dot
-    ctx.fillStyle   = '#0a0f1e';
-    ctx.font        = 'bold 12px DM Sans, sans-serif';
-    ctx.textAlign   = 'center';
-    ctx.fillText(p.val, p.x, p.y - 11);
-    // year label below
-    ctx.fillStyle   = '#8b99b8';
-    ctx.font        = '11px DM Sans, sans-serif';
-    ctx.fillText(p.yr, p.x, H - PAD.bottom + 18);
-  });
-}
-
-/* ── PUBLICATIONS PAGE ─────────────────────────────────────────────── */
-function filterPubs(cat, btn) {
-  currentFilter = cat;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderPublications();
-}
-
-function renderPublications() {
-  const acc  = document.getElementById('pubAccordion');
-  const q    = (document.getElementById('pubSearch')?.value || '').toLowerCase();
-
-  let entries = ALL_ENTRIES;
-  if (currentFilter !== 'all') entries = entries.filter(e => e.category === currentFilter);
-  if (q) entries = entries.filter(e =>
-    (e.title||'').toLowerCase().includes(q) ||
-    (e.authors||'').toLowerCase().includes(q) ||
-    (e.submitter||'').toLowerCase().includes(q)
-  );
-
-  if (!entries.length) {
-    acc.innerHTML = `<div class="pub-none">No publications found${q ? ' for your search' : ''}.</div>`;
-    return;
-  }
-
-  // group by year
-  const byYear = {};
-  entries.forEach(e => {
-    const y = String(e.year || 'Unknown');
-    if (!byYear[y]) byYear[y] = [];
-    byYear[y].push(e);
-  });
-  const years = Object.keys(byYear).sort((a,b) => b - a);
-
-  acc.innerHTML = years.map((yr, idx) => {
-    const yEntries = byYear[yr];
-    const bycat = {};
-    yEntries.forEach(e => {
-      const c = e.category || 'Other';
-      if (!bycat[c]) bycat[c] = [];
-      bycat[c].push(e);
-    });
-
-    const catHTML = Object.keys(bycat).map(cat => {
-      const isJour = cat === 'Journal Article';
-      const items  = bycat[cat];
-      return `<div class="cat-group">
-        <div class="cat-group-title">${cat}s</div>
-        ${items.map((e, i) => `
-          <div class="pub-entry">
-            <span class="pub-num">${i+1}.</span>
-            <div>
-              <div class="pub-title">${esc(e.title||'—')}</div>
-              <div class="pub-detail">
-                ${e.authors ? `<strong>${esc(e.authors)}</strong>` : ''}
-                ${isJour ? (e.journal_name ? `. <span class="pub-venue">${esc(e.journal_name)}</span>` : '') : (e.conference_name ? `. <span class="pub-venue">${esc(e.conference_name)}</span>` : '')}
-                ${e.conference_location ? `, ${esc(e.conference_location)}` : ''}
-                ${e.volume_issue ? `, ${esc(e.volume_issue)}` : ''}
-                ${(e.pages||e.journal_pages) ? `, ${esc(e.pages||e.journal_pages)}` : ''}
-                ${(e.doi_url||e.pub_link) ? ` <a href="${esc(e.doi_url||e.pub_link)}" target="_blank" style="color:var(--blue);font-size:.75rem;margin-left:4px;">↗ Link</a>` : ''}
-              </div>
-              ${(e.pub_type || e.indexed_in || e.funding) ? `<div class="pub-tags">
-                ${e.pub_type ? `<span class="pub-tag" style="background:#e0e7ff;color:#3730a3;">${esc(e.pub_type)}</span>` : ''}
-                ${e.indexed_in && e.indexed_in !== 'Not indexed' ? `<span class="pub-tag tag-indexed">${esc(e.indexed_in)}</span>` : ''}
-                ${e.funding ? `<span class="pub-tag tag-funded">Funded</span>` : ''}
-              </div>` : ''}
-            </div>
-          </div>`).join('')}
-      </div>`;
-    }).join('');
-
-    const isOpen = idx === 0 ? 'open' : '';
-    return `<div class="acc-item ${isOpen}" id="acc-${yr}">
-      <div class="acc-head" onclick="toggleAcc('acc-${yr}')">
-        <span class="acc-year">${yr}</span>
-        <div class="acc-right">
-          <span class="acc-count">${yEntries.length} publication${yEntries.length>1?'s':''}</span>
-          <span class="acc-chevron">▾</span>
-        </div>
-      </div>
-      <div class="acc-body">
-        <div class="acc-inner">${catHTML}</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function toggleAcc(id) {
-  const el = document.getElementById(id);
-  el.classList.toggle('open');
-}
-
-/* ── FORM ─────────────────────────────────────────────────────────── */
-function switchCat(cat, btn) {
-  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('fCategory').value =
-    cat === 'conf' ? 'Conference Proceedings Publication' : 'Journal Article';
-  document.querySelectorAll('.conf-f').forEach(el => el.style.display = cat === 'conf' ? '' : 'none');
-  document.querySelectorAll('.jour-f').forEach(el => el.style.display = cat === 'jour' ? '' : 'none');
-}
-// init
-document.querySelectorAll('.conf-f').forEach(el => el.style.display = '');
-document.querySelectorAll('.jour-f').forEach(el => el.style.display = 'none');
-
-function resetForm() {
-  document.getElementById('researchForm').reset();
-  switchCat('conf', document.querySelector('.cat-tab'));
-  document.querySelectorAll('.err').forEach(el => el.classList.remove('err'));
-}
-
-document.getElementById('researchForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  // validate
-  const req = this.querySelectorAll('[required]');
-  let ok = true;
-  req.forEach(f => {
-    f.classList.remove('err');
-    if (!f.value.trim()) { f.classList.add('err'); ok = false; }
-  });
-  if (!ok) { toast('Please fill in all required fields.', 'error'); return; }
-
-  const btn = document.getElementById('submitBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Submitting…';
-
-  const fd = new FormData(this), payload = {};
-  fd.forEach((v,k) => payload[k] = v);
-  payload.submitted_at = new Date().toISOString();
-
-  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
-    await new Promise(r => setTimeout(r, 900));
-    saveLocal(payload);
-    ALL_ENTRIES = merge([], [payload, ...ALL_ENTRIES]);
-    toast('✅ Submitted! (Demo mode — connect Google Sheets to persist.)');
-    resetForm();
-    updateStats(); renderFeed(); drawChart(); renderPublications();
-  } else {
-    try {
-      await fetch(APPS_SCRIPT_URL, {
-        method: 'POST', mode: 'no-cors',
-        body: JSON.stringify(payload),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      saveLocal(payload);
-      ALL_ENTRIES = merge([], [payload, ...ALL_ENTRIES]);
-      toast('✅ Entry submitted successfully!');
-      resetForm();
-      updateStats(); renderFeed(); drawChart(); renderPublications();
-    } catch {
-      toast('⚠️ Submission failed. Please try again.', 'error');
-    }
-  }
-  btn.disabled = false;
-  btn.innerHTML = '📤 Submit Entry';
-});
-
-/* ── TOAST ────────────────────────────────────────────────────────── */
-function toast(msg, type) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'show' + (type === 'error' ? ' error' : '');
-  clearTimeout(t._t);
-  t._t = setTimeout(() => t.className = '', 4000);
-}
-
-/* ── HELPERS ──────────────────────────────────────────────────────── */
-function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-/* ── SEED DEMO DATA ───────────────────────────────────────────────── */
+/* ── PUBLICATIONS DATA ───────────────────────────────────────────── */
 const REAL_PUBLICATIONS = [
   {
     "year": "2025",
@@ -4722,6 +4282,448 @@ const REAL_PUBLICATIONS = [
     "pages": ""
   }
 ];
+
+
+/* ── PAGE NAVIGATION ──────────────────────────────────────────────── */
+const PAGE_META = {
+  dashboard:    ['Dashboard', 'Research activity overview'],
+  publications: ['Publications', 'Complete faculty research outputs'],
+  submit:       ['Submit Research', 'Record a new publication or conference presentation']
+};
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  const [title, meta] = PAGE_META[id] || ['', ''];
+  document.getElementById('topbarTitle').textContent = title;
+  document.getElementById('topbarMeta').textContent  = meta;
+  if (id === 'publications') renderPublications();
+}
+
+/* ── LOCAL CACHE ──────────────────────────────────────────────────── */
+function saveLocal(entry) {
+  const list = JSON.parse(sessionStorage.getItem('ics') || '[]');
+  list.unshift(entry);
+  sessionStorage.setItem('ics', JSON.stringify(list.slice(0, 200)));
+}
+function getLocal() { return JSON.parse(sessionStorage.getItem('ics') || '[]'); }
+
+
+/* ── NORMALIZE ENTRIES FROM GOOGLE SHEET ─────────────────────────── */
+// Sheet returns compressed header names; map them back to what renderers expect
+function normalizeRemoteEntry(e) {
+  // If already in native format (has conference_name or journal_name), skip
+  if (e.conference_name !== undefined || e.journal_name !== undefined) return e;
+  const isJour = (e.category || '').toLowerCase().includes('journal');
+  return {
+    submitted_at:      e.timestamp        || e.submitted_at || '',
+    category:          e.category         || '',
+    pub_type:          e.publication_type || e.pub_type     || '',
+    submitter:         e.submitter        || '',
+    email:             e.email            || '',
+    title:             e.title            || '',
+    authors:           e.authors          || '',
+    year:              e.year             || '',
+    conference_name:   isJour ? ''        : (e.venue || ''),
+    journal_name:      isJour ? (e.venue || '') : '',
+    conference_location: isJour ? ''      : (e.location_volume || ''),
+    volume_issue:      isJour ? (e.location_volume || '') : '',
+    conference_date:   isJour ? ''        : (e.date_pages || ''),
+    journal_pages:     isJour ? (e.date_pages || '') : '',
+    pages:             isJour ? ''        : (e.pages_doi || ''),
+    doi_url:           isJour ? (e.pages_doi || '') : '',
+    pub_link:          e.link_to_publication || e.pub_link  || '',
+    abstract:          e.abstract         || '',
+    funding:           e.funding          || '',
+    indexed_in:        e.indexed_in       || '',
+  };
+}
+
+/* ── DATA FETCH ───────────────────────────────────────────────────── */
+async function fetchRemote() {
+  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') return [];
+  // Apps Script GET requires JSONP to avoid CORS errors when hosted on GitHub Pages
+  return new Promise((resolve) => {
+    const cbName = '_gsCb_' + Date.now();
+    const script = document.createElement('script');
+    const timer = setTimeout(() => {
+      delete window[cbName];
+      script.remove();
+      resolve([]);
+    }, 8000);
+    window[cbName] = (data) => {
+      clearTimeout(timer);
+      delete window[cbName];
+      script.remove();
+      resolve(data.entries || []);
+    };
+    script.src = APPS_SCRIPT_URL + '?action=getAll&callback=' + cbName;
+    script.onerror = () => { clearTimeout(timer); delete window[cbName]; resolve([]); };
+    document.head.appendChild(script);
+  });
+}
+
+function merge(remote, local) {
+  const seen = new Set();
+  return [...local, ...remote].filter(e => {
+    const k = (e.title||'').trim().toLowerCase() + '|' + (e.submitter||'');
+    if (seen.has(k)) return false;
+    seen.add(k); return true;
+  });
+}
+
+let ALL_ENTRIES = [];
+let currentFilter = 'all';
+
+async function loadAll() {
+  const rawRemote = await fetchRemote();
+  const remote = rawRemote.map(normalizeRemoteEntry);
+  // Merge: real data + remote (Google Sheet) + local new submissions
+  ALL_ENTRIES = merge(remote, [...REAL_PUBLICATIONS, ...getLocal()]);
+  updateStats();
+  renderFeed();
+  drawChart();
+  renderPublications();
+}
+
+/* ── STATS ────────────────────────────────────────────────────────── */
+function updateStats() {
+  const yr = new Date().getFullYear();
+  const conf = ALL_ENTRIES.filter(e => e.category === 'Conference Proceedings Publication').length;
+  const jour = ALL_ENTRIES.filter(e => e.category === 'Journal Article').length;
+  const yrCount = ALL_ENTRIES.filter(e =>
+    String(e.year) === String(yr) ||
+    (e.submitted_at && e.submitted_at.startsWith(String(yr)))
+  ).length;
+
+  animNum('sTotal', ALL_ENTRIES.length);
+  animNum('sConf',  conf);
+  animNum('sJour',  jour);
+  animNum('sYear',  yrCount);
+  document.getElementById('sYearLbl').textContent = `Submissions in ${yr}`;
+}
+
+function animNum(id, target) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  let n = 0, step = Math.max(1, Math.floor(target / 18));
+  const t = setInterval(() => {
+    n = Math.min(n + step, target);
+    el.textContent = n;
+    if (n >= target) clearInterval(t);
+  }, 28);
+}
+
+/* ── RECENT FEED ──────────────────────────────────────────────────── */
+function renderFeed() {
+  const list = document.getElementById('feedList');
+  const entries = ALL_ENTRIES.slice(0, 8);
+  if (!entries.length) {
+    list.innerHTML = '<li class="feed-empty">No submissions yet.</li>';
+    return;
+  }
+  list.innerHTML = entries.map((e, i) => {
+    const isJour = e.category === 'Journal Article';
+    const venue  = isJour ? (e.journal_name||'') : (e.conference_name||'');
+    const dateStr = e.submitted_at
+      ? new Date(e.submitted_at).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})
+      : (e.year || '');
+    return `<li class="feed-item" style="animation-delay:${i*.05}s">
+      <div class="feed-top">
+        <span class="feed-title-text">${esc(e.title||'—')}</span>
+        <span class="feed-badge ${isJour?'b-jour':'b-conf'}">${isJour?'Journal':'Conference'}</span>
+      </div>
+      <div class="feed-meta-row">
+        <span class="feed-author">${esc(e.authors||'')}</span>
+        ${venue ? `<span class="feed-dot">●</span><span class="feed-venue">${esc(venue)}</span>` : ''}
+      </div>
+      <div class="feed-date">${dateStr}</div>
+    </li>`;
+  }).join('');
+}
+
+/* ── LINE CHART ───────────────────────────────────────────────────── */
+function drawChart() {
+  const canvas = document.getElementById('chartCanvas');
+  const empty  = document.getElementById('chartEmpty');
+  if (!ALL_ENTRIES.length) {
+    canvas.style.display = 'none';
+    empty.style.display  = 'block';
+    return;
+  }
+  canvas.style.display = 'block';
+  empty.style.display  = 'none';
+
+  // build year buckets
+  const yearMap = {};
+  ALL_ENTRIES.forEach(e => {
+    const y = parseInt(e.year) || new Date(e.submitted_at||'').getFullYear();
+    if (!y || isNaN(y)) return;
+    yearMap[y] = (yearMap[y]||0) + 1;
+  });
+  const years = Object.keys(yearMap).sort();
+  if (years.length < 1) { canvas.style.display='none'; empty.style.display='block'; return; }
+
+  const counts = years.map(y => yearMap[y]);
+  const maxVal = Math.max(...counts, 1);
+
+  // responsive canvas sizing
+  const container = canvas.parentElement;
+  const W = container.clientWidth - 0;
+  const H = 220;
+  canvas.width  = W;
+  canvas.height = H;
+
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  const PAD = { top:20, right:20, bottom:44, left:40 };
+  const gW  = W - PAD.left - PAD.right;
+  const gH  = H - PAD.top  - PAD.bottom;
+
+  // grid lines
+  const gridCount = 4;
+  ctx.strokeStyle = '#e4e9f4';
+  ctx.lineWidth   = 1;
+  ctx.setLineDash([4,4]);
+  for (let i = 0; i <= gridCount; i++) {
+    const y = PAD.top + (gH * (1 - i/gridCount));
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left+gW, y); ctx.stroke();
+    // y-axis labels
+    ctx.fillStyle   = '#8b99b8';
+    ctx.font        = '11px DM Sans, sans-serif';
+    ctx.textAlign   = 'right';
+    ctx.fillText(Math.round(maxVal * i/gridCount), PAD.left-6, y+4);
+  }
+  ctx.setLineDash([]);
+
+  // compute points
+  const pts = years.map((y, i) => ({
+    x: PAD.left + (years.length > 1 ? (i/(years.length-1)) * gW : gW/2),
+    y: PAD.top  + gH * (1 - counts[i]/maxVal),
+    val: counts[i], yr: y
+  }));
+
+  // fill gradient
+  const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top+gH);
+  grad.addColorStop(0,   'rgba(21,71,192,.18)');
+  grad.addColorStop(1,   'rgba(21,71,192,0)');
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, PAD.top+gH);
+  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pts[pts.length-1].x, PAD.top+gH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // line
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  if (pts.length > 2) {
+    for (let i=1; i<pts.length-1; i++) {
+      const cpX = (pts[i].x + pts[i+1].x)/2;
+      const cpY = (pts[i].y + pts[i+1].y)/2;
+      ctx.quadraticCurveTo(pts[i].x, pts[i].y, cpX, cpY);
+    }
+  }
+  ctx.lineTo(pts[pts.length-1].x, pts[pts.length-1].y);
+  ctx.strokeStyle = '#1547c0';
+  ctx.lineWidth   = 2.5;
+  ctx.stroke();
+
+  // dots + labels
+  pts.forEach(p => {
+    // outer ring
+    ctx.beginPath(); ctx.arc(p.x, p.y, 5.5, 0, Math.PI*2);
+    ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.strokeStyle = '#1547c0'; ctx.lineWidth = 2.5; ctx.stroke();
+    // inner dot
+    ctx.beginPath(); ctx.arc(p.x, p.y, 2.5, 0, Math.PI*2);
+    ctx.fillStyle = '#1547c0'; ctx.fill();
+    // count label above dot
+    ctx.fillStyle   = '#0a0f1e';
+    ctx.font        = 'bold 12px DM Sans, sans-serif';
+    ctx.textAlign   = 'center';
+    ctx.fillText(p.val, p.x, p.y - 11);
+    // year label below
+    ctx.fillStyle   = '#8b99b8';
+    ctx.font        = '11px DM Sans, sans-serif';
+    ctx.fillText(p.yr, p.x, H - PAD.bottom + 18);
+  });
+}
+
+/* ── PUBLICATIONS PAGE ─────────────────────────────────────────────── */
+function filterPubs(cat, btn) {
+  currentFilter = cat;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPublications();
+}
+
+function renderPublications() {
+  const acc  = document.getElementById('pubAccordion');
+  const q    = (document.getElementById('pubSearch')?.value || '').toLowerCase();
+
+  let entries = ALL_ENTRIES;
+  if (currentFilter !== 'all') entries = entries.filter(e => e.category === currentFilter);
+  if (q) entries = entries.filter(e =>
+    (e.title||'').toLowerCase().includes(q) ||
+    (e.authors||'').toLowerCase().includes(q) ||
+    (e.submitter||'').toLowerCase().includes(q)
+  );
+
+  if (!entries.length) {
+    acc.innerHTML = `<div class="pub-none">No publications found${q ? ' for your search' : ''}.</div>`;
+    return;
+  }
+
+  // group by year
+  const byYear = {};
+  entries.forEach(e => {
+    const y = String(e.year || 'Unknown');
+    if (!byYear[y]) byYear[y] = [];
+    byYear[y].push(e);
+  });
+  const years = Object.keys(byYear).sort((a,b) => b - a);
+
+  acc.innerHTML = years.map((yr, idx) => {
+    const yEntries = byYear[yr];
+    const bycat = {};
+    yEntries.forEach(e => {
+      const c = e.category || 'Other';
+      if (!bycat[c]) bycat[c] = [];
+      bycat[c].push(e);
+    });
+
+    const catHTML = Object.keys(bycat).map(cat => {
+      const isJour = cat === 'Journal Article';
+      const items  = bycat[cat];
+      return `<div class="cat-group">
+        <div class="cat-group-title">${cat}s</div>
+        ${items.map((e, i) => `
+          <div class="pub-entry">
+            <span class="pub-num">${i+1}.</span>
+            <div>
+              <div class="pub-title">${esc(e.title||'—')}</div>
+              <div class="pub-detail">
+                ${e.authors ? `<strong>${esc(e.authors)}</strong>` : ''}
+                ${isJour ? (e.journal_name ? `. <span class="pub-venue">${esc(e.journal_name)}</span>` : '') : (e.conference_name ? `. <span class="pub-venue">${esc(e.conference_name)}</span>` : '')}
+                ${e.conference_location ? `, ${esc(e.conference_location)}` : ''}
+                ${e.volume_issue ? `, ${esc(e.volume_issue)}` : ''}
+                ${(e.pages||e.journal_pages) ? `, ${esc(e.pages||e.journal_pages)}` : ''}
+                ${(e.doi_url||e.pub_link) ? ` <a href="${esc(e.doi_url||e.pub_link)}" target="_blank" style="color:var(--blue);font-size:.75rem;margin-left:4px;">↗ Link</a>` : ''}
+              </div>
+              ${(e.pub_type || e.indexed_in || e.funding) ? `<div class="pub-tags">
+                ${e.pub_type ? `<span class="pub-tag" style="background:#e0e7ff;color:#3730a3;">${esc(e.pub_type)}</span>` : ''}
+                ${e.indexed_in && e.indexed_in !== 'Not indexed' ? `<span class="pub-tag tag-indexed">${esc(e.indexed_in)}</span>` : ''}
+                ${e.funding ? `<span class="pub-tag tag-funded">Funded</span>` : ''}
+              </div>` : ''}
+            </div>
+          </div>`).join('')}
+      </div>`;
+    }).join('');
+
+    const isOpen = idx === 0 ? 'open' : '';
+    return `<div class="acc-item ${isOpen}" id="acc-${yr}">
+      <div class="acc-head" onclick="toggleAcc('acc-${yr}')">
+        <span class="acc-year">${yr}</span>
+        <div class="acc-right">
+          <span class="acc-count">${yEntries.length} publication${yEntries.length>1?'s':''}</span>
+          <span class="acc-chevron">▾</span>
+        </div>
+      </div>
+      <div class="acc-body">
+        <div class="acc-inner">${catHTML}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleAcc(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+/* ── FORM ─────────────────────────────────────────────────────────── */
+function switchCat(cat, btn) {
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('fCategory').value =
+    cat === 'conf' ? 'Conference Proceedings Publication' : 'Journal Article';
+  document.querySelectorAll('.conf-f').forEach(el => el.style.display = cat === 'conf' ? '' : 'none');
+  document.querySelectorAll('.jour-f').forEach(el => el.style.display = cat === 'jour' ? '' : 'none');
+}
+// init
+document.querySelectorAll('.conf-f').forEach(el => el.style.display = '');
+document.querySelectorAll('.jour-f').forEach(el => el.style.display = 'none');
+
+function resetForm() {
+  document.getElementById('researchForm').reset();
+  switchCat('conf', document.querySelector('.cat-tab'));
+  document.querySelectorAll('.err').forEach(el => el.classList.remove('err'));
+}
+
+document.getElementById('researchForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  // validate
+  const req = this.querySelectorAll('[required]');
+  let ok = true;
+  req.forEach(f => {
+    f.classList.remove('err');
+    if (!f.value.trim()) { f.classList.add('err'); ok = false; }
+  });
+  if (!ok) { toast('Please fill in all required fields.', 'error'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Submitting…';
+
+  const fd = new FormData(this), payload = {};
+  fd.forEach((v,k) => payload[k] = v);
+  payload.submitted_at = new Date().toISOString();
+
+  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+    await new Promise(r => setTimeout(r, 900));
+    saveLocal(payload);
+    ALL_ENTRIES = merge([], [payload, ...ALL_ENTRIES]);
+    toast('✅ Submitted! (Demo mode — connect Google Sheets to persist.)');
+    resetForm();
+    updateStats(); renderFeed(); drawChart(); renderPublications();
+  } else {
+    try {
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST', mode: 'no-cors',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      saveLocal(payload);
+      ALL_ENTRIES = merge([], [payload, ...ALL_ENTRIES]);
+      toast('✅ Entry submitted successfully!');
+      resetForm();
+      updateStats(); renderFeed(); drawChart(); renderPublications();
+    } catch {
+      toast('⚠️ Submission failed. Please try again.', 'error');
+    }
+  }
+  btn.disabled = false;
+  btn.innerHTML = '📤 Submit Entry';
+});
+
+/* ── TOAST ────────────────────────────────────────────────────────── */
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (type === 'error' ? ' error' : '');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.className = '', 4000);
+}
+
+/* ── HELPERS ──────────────────────────────────────────────────────── */
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 
 function seedDemo() {
   // Seed data is kept in memory only (not in sessionStorage)
