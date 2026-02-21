@@ -1,0 +1,4781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ICS Research Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── TOKENS ─────────────────────────────────────────────────────── */
+    :root {
+      --ink:        #0a0f1e;
+      --blue:       #1547c0;
+      --blue-dark:  #0d33a0;
+      --blue-pale:  #eef3fd;
+      --blue-line:  #c5d4f5;
+      --mist:       #f5f7fc;
+      --white:      #ffffff;
+      --rule:       #e4e9f4;
+      --mid:        #5c6b8a;
+      --soft:       #8b99b8;
+      --conf-bg:    #eff6ff;
+      --conf-col:   #1d4ed8;
+      --jour-bg:    #f0fdf4;
+      --jour-col:   #15803d;
+      --red:        #c0392b;
+      --shadow:     0 2px 12px rgba(10,15,30,.08);
+      --shadow-lg:  0 8px 40px rgba(10,15,30,.12);
+      --r:          8px;
+      --r-lg:       14px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--white);
+      color: var(--ink);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── LAYOUT ─────────────────────────────────────────────────────── */
+    .app { display: flex; min-height: 100vh; }
+
+    /* ── SIDEBAR ─────────────────────────────────────────────────────── */
+    .sidebar {
+      width: 240px;
+      flex-shrink: 0;
+      background: var(--ink);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 200;
+      overflow-y: auto;
+    }
+
+    .sidebar-brand {
+      padding: 32px 24px 28px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .brand-icon {
+      width: 34px; height: 34px;
+      background: var(--blue);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .brand-name {
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.5);
+    }
+    .sidebar-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.15rem;
+      color: #fff;
+      line-height: 1.3;
+    }
+    .sidebar-sub {
+      font-size: .72rem;
+      color: rgba(255,255,255,.38);
+      margin-top: 4px;
+      letter-spacing: .04em;
+    }
+
+    .sidebar-nav {
+      padding: 20px 12px;
+      flex: 1;
+    }
+    .nav-label {
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.25);
+      padding: 0 12px;
+      margin: 8px 0 6px;
+    }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--r);
+      cursor: pointer;
+      color: rgba(255,255,255,.55);
+      font-size: .88rem;
+      font-weight: 500;
+      transition: all .18s;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      text-decoration: none;
+    }
+    .nav-item .ni { font-size: 1rem; width: 20px; text-align: center; }
+    .nav-item:hover { color: #fff; background: rgba(255,255,255,.06); }
+    .nav-item.active { color: #fff; background: var(--blue); }
+
+    .sidebar-footer {
+      padding: 20px 24px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      font-size: .72rem;
+      color: rgba(255,255,255,.25);
+      line-height: 1.6;
+    }
+    .sidebar-footer a { color: rgba(255,255,255,.4); text-decoration: none; }
+    .sidebar-footer a:hover { color: rgba(255,255,255,.7); }
+
+    /* ── CONTENT AREA ────────────────────────────────────────────────── */
+    .content {
+      margin-left: 240px;
+      flex: 1;
+      min-height: 100vh;
+      background: var(--mist);
+    }
+
+    /* ── TOP BAR ─────────────────────────────────────────────────────── */
+    .topbar {
+      background: var(--white);
+      border-bottom: 1px solid var(--rule);
+      padding: 0 40px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .topbar-title {
+      font-size: .92rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+    .topbar-meta {
+      font-size: .78rem;
+      color: var(--soft);
+    }
+    .topbar-submit {
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: var(--r);
+      padding: 8px 20px;
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      letter-spacing: .02em;
+      transition: background .18s;
+    }
+    .topbar-submit:hover { background: var(--blue-dark); }
+
+    /* ── PAGE WRAPPER ────────────────────────────────────────────────── */
+    .page { display: none; padding: 40px; max-width: 1100px; animation: pageFade .25s ease; }
+    .page.active { display: block; }
+    @keyframes pageFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    /* ── PAGE HEADER ─────────────────────────────────────────────────── */
+    .page-header { margin-bottom: 36px; }
+    .page-header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2.2rem;
+      color: var(--ink);
+      line-height: 1.15;
+    }
+    .page-header p {
+      color: var(--mid);
+      font-size: .95rem;
+      margin-top: 6px;
+    }
+    .page-divider {
+      width: 48px; height: 3px;
+      background: var(--blue);
+      border-radius: 2px;
+      margin-top: 14px;
+    }
+
+    /* ── STAT CARDS ─────────────────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: var(--white);
+      border: 1px solid var(--rule);
+      border-radius: var(--r-lg);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--blue);
+    }
+    .stat-card:nth-child(2)::before { background: #0891b2; }
+    .stat-card:nth-child(3)::before { background: #15803d; }
+    .stat-card:nth-child(4)::before { background: #7c3aed; }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+
+    .stat-num {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2.8rem;
+      color: var(--ink);
+      line-height: 1;
+    }
+    .stat-lbl {
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--soft);
+      margin-top: 6px;
+    }
+    .stat-sub { font-size: .76rem; color: var(--soft); margin-top: 2px; }
+
+    /* ── DASHBOARD GRID ──────────────────────────────────────────────── */
+    .dash-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    /* ── CARD ────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--white);
+      border: 1px solid var(--rule);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--rule);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-title {
+      font-size: .88rem;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: .01em;
+    }
+    .card-body { padding: 24px; }
+
+    /* ── CHART ───────────────────────────────────────────────────────── */
+    #chartCanvas { width: 100%; display: block; }
+
+    /* ── FEED ────────────────────────────────────────────────────────── */
+    .feed-list { list-style: none; }
+    .feed-item {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--rule);
+      transition: background .15s;
+      animation: fadeUp .35s ease both;
+    }
+    .feed-item:last-child { border-bottom: none; }
+    .feed-item:hover { background: var(--mist); }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+    .feed-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .feed-badge {
+      font-size: .65rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 20px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .b-conf { background: var(--conf-bg); color: var(--conf-col); }
+    .b-jour { background: var(--jour-bg); color: var(--jour-col); }
+
+    .feed-title-text {
+      font-size: .88rem;
+      font-weight: 500;
+      color: var(--ink);
+      line-height: 1.45;
+      flex: 1;
+    }
+    .feed-meta-row { display: flex; align-items: center; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
+    .feed-author { font-size: .75rem; color: var(--mid); }
+    .feed-dot { font-size: .5rem; color: var(--soft); }
+    .feed-venue { font-size: .75rem; color: var(--soft); }
+    .feed-date { font-size: .72rem; color: var(--soft); margin-top: 4px; }
+
+    .feed-empty {
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--soft);
+      font-size: .88rem;
+      font-style: italic;
+    }
+
+    /* refresh btn */
+    .icon-btn {
+      background: none; border: 1px solid var(--rule);
+      color: var(--mid); border-radius: 6px;
+      padding: 5px 12px; font-size: .75rem;
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      font-weight: 500; transition: all .18s;
+    }
+    .icon-btn:hover { border-color: var(--blue); color: var(--blue); }
+
+    /* spinner */
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid var(--blue-line); border-top-color: var(--blue);
+      border-radius: 50%; animation: spin .7s linear infinite;
+      vertical-align: middle; margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── PUBLICATIONS PAGE ──────────────────────────────────────────── */
+    .pub-controls {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 28px; flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 7px 18px;
+      border: 1.5px solid var(--rule);
+      border-radius: 30px;
+      background: var(--white);
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--mid);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      transition: all .18s;
+    }
+    .filter-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .filter-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+    .pub-search {
+      margin-left: auto;
+      border: 1.5px solid var(--rule);
+      border-radius: var(--r);
+      padding: 7px 14px;
+      font-size: .82rem;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--ink);
+      background: var(--white);
+      width: 220px;
+      transition: border-color .18s;
+    }
+    .pub-search:focus { outline: none; border-color: var(--blue); }
+
+    /* accordion */
+    .accordion { display: flex; flex-direction: column; gap: 10px; }
+    .acc-item {
+      background: var(--white);
+      border: 1px solid var(--rule);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .acc-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 28px;
+      cursor: pointer;
+      transition: background .18s;
+      user-select: none;
+    }
+    .acc-head:hover { background: var(--mist); }
+    .acc-year {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.6rem;
+      color: var(--ink);
+    }
+    .acc-right { display: flex; align-items: center; gap: 12px; }
+    .acc-count {
+      background: var(--blue-pale);
+      color: var(--blue);
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+    .acc-chevron {
+      color: var(--soft); font-size: 1rem;
+      transition: transform .25s;
+    }
+    .acc-item.open .acc-chevron { transform: rotate(180deg); }
+
+    .acc-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height .35s cubic-bezier(.4,0,.2,1);
+    }
+    .acc-item.open .acc-body { max-height: 9999px; }
+
+    .acc-inner { padding: 0 28px 24px; }
+
+    /* category group within accordion */
+    .cat-group { margin-bottom: 24px; }
+    .cat-group:last-child { margin-bottom: 0; }
+    .cat-group-title {
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--soft);
+      border-bottom: 1px solid var(--rule);
+      padding-bottom: 8px;
+      margin-bottom: 14px;
+    }
+
+    .pub-entry {
+      padding: 14px 0;
+      border-bottom: 1px solid var(--rule);
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    .pub-entry:last-child { border-bottom: none; }
+    .pub-num {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--soft);
+      padding-top: 3px;
+      min-width: 22px;
+    }
+    .pub-title {
+      font-size: .9rem;
+      font-weight: 500;
+      color: var(--ink);
+      line-height: 1.45;
+    }
+    .pub-detail {
+      font-size: .78rem;
+      color: var(--mid);
+      margin-top: 4px;
+    }
+    .pub-venue { font-style: italic; }
+    .pub-tags { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+    .pub-tag {
+      font-size: .65rem;
+      font-weight: 600;
+      letter-spacing: .05em;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .tag-indexed { background: #fef9c3; color: #854d0e; }
+    .tag-funded  { background: #f3e8ff; color: #6b21a8; }
+
+    .pub-none {
+      text-align: center; padding: 48px 20px;
+      color: var(--soft); font-style: italic; font-size: .88rem;
+    }
+
+    /* ── FORM PAGE ──────────────────────────────────────────────────── */
+    .form-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+    .form-info-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .form-card {
+      background: var(--white);
+      border: 1px solid var(--rule);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .form-head {
+      padding: 28px 32px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .form-head h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.35rem;
+      color: var(--ink);
+    }
+    .form-head p { font-size: .84rem; color: var(--mid); margin-top: 4px; }
+
+    .form-body { padding: 28px 32px; }
+
+    .cat-tabs { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
+    .cat-tab {
+      padding: 8px 20px;
+      border: 1.5px solid var(--rule);
+      border-radius: 30px;
+      background: none;
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--mid);
+      cursor: pointer;
+      transition: all .18s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .cat-tab:hover { border-color: var(--blue); color: var(--blue); }
+    .cat-tab.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .fg { display: flex; flex-direction: column; gap: 5px; }
+    .fg.full { grid-column: 1/-1; }
+
+    label {
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--mid);
+    }
+    label .req { color: var(--red); margin-left: 2px; }
+
+    input[type=text], input[type=email], input[type=number], input[type=url], select, textarea {
+      border: 1.5px solid var(--rule);
+      border-radius: var(--r);
+      padding: 10px 13px;
+      font-size: .9rem;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--ink);
+      background: var(--white);
+      transition: border-color .18s, box-shadow .18s;
+      width: 100%;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(21,71,192,.1);
+    }
+    input.err, select.err, textarea.err { border-color: var(--red); }
+    textarea { resize: vertical; min-height: 88px; }
+    .hint { font-size: .72rem; color: var(--soft); }
+
+    .form-actions {
+      margin-top: 24px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .btn-primary {
+      background: var(--blue); color: #fff;
+      border: none; border-radius: var(--r);
+      padding: 11px 28px;
+      font-size: .9rem; font-weight: 700;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer; transition: background .18s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .btn-primary:hover { background: var(--blue-dark); }
+    .btn-primary:disabled { background: var(--rule); color: var(--soft); cursor: not-allowed; }
+    .btn-ghost {
+      background: none; border: 1.5px solid var(--rule);
+      color: var(--mid); border-radius: var(--r);
+      padding: 10px 20px; font-size: .85rem;
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      transition: all .18s;
+    }
+    .btn-ghost:hover { border-color: var(--mid); color: var(--ink); }
+
+    /* sidebar info cards */
+    .info-card {
+      background: var(--white);
+      border: 1px solid var(--rule);
+      border-radius: var(--r-lg);
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+    .info-card h4 {
+      font-size: .78rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--ink);
+      margin-bottom: 10px;
+    }
+    .info-card p { font-size: .82rem; color: var(--mid); line-height: 1.6; }
+    .info-card a { color: var(--blue); text-decoration: none; font-weight: 500; }
+    .info-card a:hover { text-decoration: underline; }
+
+    /* correction notice */
+    .correction-notice {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-left: 4px solid #f97316;
+      border-radius: var(--r);
+      padding: 14px 16px;
+    }
+    .correction-notice h4 { color: #9a3412; margin-bottom: 6px; }
+    .correction-notice p { color: #7c2d12; font-size: .8rem; }
+
+    /* config banner */
+    .config-banner {
+      background: var(--blue-pale);
+      border: 1px solid var(--blue-line);
+      border-radius: var(--r);
+      padding: 12px 16px;
+      margin-bottom: 28px;
+      font-size: .82rem;
+      color: var(--blue-dark);
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .config-banner code {
+      background: rgba(21,71,192,.1);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-family: monospace;
+      font-size: .79rem;
+    }
+    .config-banner button {
+      margin-left: auto; background: none; border: none;
+      color: var(--blue); cursor: pointer; font-size: 1rem; flex-shrink: 0;
+      padding: 0 4px;
+    }
+
+    /* toast */
+    #toast {
+      position: fixed; bottom: 28px; right: 28px;
+      background: var(--ink); color: #fff;
+      padding: 13px 20px;
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow-lg);
+      font-size: .86rem; font-weight: 500;
+      transform: translateY(60px); opacity: 0;
+      transition: all .3s cubic-bezier(.34,1.56,.64,1);
+      z-index: 999; border-left: 3px solid var(--blue);
+      max-width: 320px;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.error { border-left-color: var(--red); }
+
+    /* ── RESPONSIVE ─────────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .sidebar { width: 200px; }
+      .content { margin-left: 200px; }
+      .dash-grid { grid-template-columns: 1fr; }
+      .form-info-row { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .sidebar { transform: translateX(-100%); }
+      .content { margin-left: 0; }
+      .page { padding: 24px 18px; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .form-info-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-badge">
+        <div class="brand-icon">💡</div>
+        <span class="brand-name">ICS · UPLB</span>
+      </div>
+      <div class="sidebar-title">Research Portal</div>
+      <div class="sidebar-sub">Institute of Computer Science</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-label">Navigation</div>
+      <button class="nav-item active" onclick="showPage('dashboard',this)">
+        <span class="ni">📊</span> Dashboard
+      </button>
+      <button class="nav-item" onclick="showPage('publications',this)">
+        <span class="ni">📚</span> Publications
+      </button>
+      <button class="nav-item" onclick="showPage('submit',this)">
+        <span class="ni">✏️</span> Submit Research
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      Institute of Computer Science<br/>
+      College of Arts and Sciences<br/>
+      University of the Philippines<br/>
+      Los Baños, Laguna<br/><br/>
+      <a href="mailto:ics@uplb.edu.ph">ics@uplb.edu.ph</a>
+    </div>
+  </aside>
+
+  <!-- ═══ CONTENT ═══ -->
+  <div class="content">
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div>
+        <div class="topbar-title" id="topbarTitle">Dashboard</div>
+        <div class="topbar-meta" id="topbarMeta">Research activity overview</div>
+      </div>
+      <button class="topbar-submit" onclick="showPage('submit', document.querySelector('.nav-item:nth-child(3)'))">
+        + New Submission
+      </button>
+    </div>
+
+    <!-- ═══ PAGE: DASHBOARD ═══ -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <h1>Research Activity Dashboard</h1>
+        <p>Tracking scholarly output across all ICS-CAS UPLB faculty members.</p>
+        <div class="page-divider"></div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-num" id="sTotal">—</div>
+          <div class="stat-lbl">Total Publications</div>
+          <div class="stat-sub">All categories</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="sConf">—</div>
+          <div class="stat-lbl">Conference Papers</div>
+          <div class="stat-sub">Proceedings</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="sJour">—</div>
+          <div class="stat-lbl">Journal Articles</div>
+          <div class="stat-sub">Peer-reviewed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="sYear">—</div>
+          <div class="stat-lbl">This Year</div>
+          <div class="stat-sub" id="sYearLbl">2025</div>
+        </div>
+      </div>
+
+      <!-- CHART + FEED -->
+      <div class="dash-grid">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Publications Over Time</span>
+            <span style="font-size:.75rem;color:var(--soft);">Line chart — by year</span>
+          </div>
+          <div class="card-body" style="padding:20px 24px;">
+            <canvas id="chartCanvas" height="220"></canvas>
+            <div id="chartEmpty" style="display:none;text-align:center;padding:40px;color:var(--soft);font-size:.85rem;font-style:italic;">No data yet — submit your first research entry.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Recent Submissions</span>
+            <button class="icon-btn" onclick="loadAll()">↻ Refresh</button>
+          </div>
+          <ul class="feed-list" id="feedList">
+            <li class="feed-empty"><span class="spinner"></span> Loading…</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE: PUBLICATIONS ═══ -->
+    <div class="page" id="page-publications">
+      <div class="page-header">
+        <h1>Publications</h1>
+        <p>Complete list of ICS-CAS UPLB faculty research outputs, grouped by year and category.</p>
+        <div class="page-divider"></div>
+      </div>
+
+      <div class="pub-controls">
+        <button class="filter-btn active" onclick="filterPubs('all',this)">All</button>
+        <button class="filter-btn" onclick="filterPubs('Conference Proceedings Publication',this)">Conference</button>
+        <button class="filter-btn" onclick="filterPubs('Journal Article',this)">Journal</button>
+        <input class="pub-search" type="text" id="pubSearch" placeholder="Search titles, authors…" oninput="renderPublications()"/>
+      </div>
+
+      <div class="accordion" id="pubAccordion">
+        <div class="pub-none"><span class="spinner"></span> Loading publications…</div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE: SUBMIT ═══ -->
+    <div class="page" id="page-submit">
+      <div class="page-header">
+        <h1>Submit Research Activity</h1>
+        <p>Record a new publication or conference presentation.</p>
+        <div class="page-divider"></div>
+      </div>
+
+      <div class="config-banner" id="configBanner" style="display:none;">
+        ⚙️&nbsp; <span><strong>Setup:</strong> Replace <code>APPS_SCRIPT_URL</code> in the script with your Google Apps Script Web App URL to persist data.</span>
+        <button onclick="this.closest('.config-banner').style.display='none'">✕</button>
+      </div>
+
+      <div class="form-layout">
+
+        <!-- INFO CARDS ROW (3 columns) -->
+        <div class="form-info-row">
+          <div class="info-card">
+            <h4>📋 Guidelines</h4>
+            <p>Submit one entry per publication. Ensure the title matches exactly as published. Co-authored works should be submitted by the ICS faculty lead author only.</p>
+          </div>
+          <div class="info-card">
+            <h4>📅 Deadlines</h4>
+            <p>Submissions are accepted on a rolling basis. For inclusion in the annual report, please submit by <strong>November 30</strong> of each year.</p>
+          </div>
+          <div class="info-card correction-notice">
+            <h4>⚠️ Mistaken Submission?</h4>
+            <p>If you submitted incorrect information, please do not resubmit. Instead, contact the <strong>Research Division</strong> directly at <a href="mailto:ics-research@uplb.edu.ph" style="color:#9a3412;font-weight:600;">ics-research@uplb.edu.ph</a> or visit the ICS Secretariat so they can correct or remove the entry.</p>
+          </div>
+        </div>
+
+        <!-- FORM (full width) -->
+        <div class="form-card">
+          <div class="form-head">
+            <h2>New Research Entry</h2>
+            <p>Fill in the details carefully. Fields marked <span style="color:var(--red)">*</span> are required.</p>
+          </div>
+          <div class="form-body">
+
+            <div class="cat-tabs" id="catTabs">
+              <button class="cat-tab active" onclick="switchCat('conf',this)">📘 Conference Proceedings</button>
+              <button class="cat-tab" onclick="switchCat('jour',this)">📗 Journal Article</button>
+            </div>
+
+            <form id="researchForm" novalidate>
+              <input type="hidden" id="fCategory" name="category" value="Conference Proceedings Publication"/>
+              <div class="form-grid">
+
+                <!-- Common -->
+                <div class="fg full">
+                  <label for="fTitle">Title of Work <span class="req">*</span></label>
+                  <input type="text" id="fTitle" name="title" placeholder="Full title as it appears in the publication"/>
+                </div>
+                <div class="fg">
+                  <label for="fAuthors">Author(s) <span class="req">*</span></label>
+                  <input type="text" id="fAuthors" name="authors" placeholder="e.g. J. dela Cruz, M. Santos"/>
+                  <span class="hint">List all authors in order.</span>
+                </div>
+                <div class="fg">
+                  <label for="fSubmitter">Your Name <span class="req">*</span></label>
+                  <input type="text" id="fSubmitter" name="submitter" placeholder="Submitting faculty member"/>
+                </div>
+                <div class="fg">
+                  <label for="fEmail">Faculty Email <span class="req">*</span></label>
+                  <input type="email" id="fEmail" name="email" placeholder="yourname@uplb.edu.ph"/>
+                </div>
+                <div class="fg">
+                  <label for="fYear">Year <span class="req">*</span></label>
+                  <input type="number" id="fYear" name="year" min="1990" max="2035" placeholder="e.g. 2024"/>
+                </div>
+
+                <!-- Conference-specific -->
+                <div class="fg conf-f" id="cf1">
+                  <label for="fConfName">Conference Name <span class="req">*</span></label>
+                  <input type="text" id="fConfName" name="conference_name" placeholder="e.g. IEEE ICSE 2024"/>
+                </div>
+                <div class="fg conf-f" id="cf2">
+                  <label for="fConfLoc">Location</label>
+                  <input type="text" id="fConfLoc" name="conference_location" placeholder="City, Country"/>
+                </div>
+                <div class="fg conf-f" id="cf3">
+                  <label for="fConfDate">Conference Date</label>
+                  <input type="text" id="fConfDate" name="conference_date" placeholder="e.g. Aug 14–16, 2024"/>
+                </div>
+                <div class="fg conf-f" id="cf4">
+                  <label for="fPages">Pages</label>
+                  <input type="text" id="fPages" name="pages" placeholder="e.g. pp. 112–118"/>
+                </div>
+
+                <!-- Journal-specific -->
+                <div class="fg jour-f" id="jf1">
+                  <label for="fJourName">Journal Name <span class="req">*</span></label>
+                  <input type="text" id="fJourName" name="journal_name" placeholder="e.g. ACM Transactions on…"/>
+                </div>
+                <div class="fg jour-f" id="jf2">
+                  <label for="fVol">Volume / Issue</label>
+                  <input type="text" id="fVol" name="volume_issue" placeholder="e.g. Vol. 12, No. 3"/>
+                </div>
+                <div class="fg jour-f" id="jf3">
+                  <label for="fJPages">Pages</label>
+                  <input type="text" id="fJPages" name="journal_pages" placeholder="e.g. pp. 45–67"/>
+                </div>
+                <div class="fg jour-f" id="jf4">
+                  <label for="fDOI">DOI / URL</label>
+                  <input type="url" id="fDOI" name="doi_url" placeholder="https://doi.org/…"/>
+                </div>
+
+                <!-- Shared -->
+                <div class="fg full">
+                  <label for="fAbstract">Abstract / Description</label>
+                  <textarea id="fAbstract" name="abstract" placeholder="Paste the abstract or a brief description…"></textarea>
+                </div>
+                <div class="fg">
+                  <label for="fPubType">Publication Type <span class="req">*</span></label>
+                  <select id="fPubType" name="pub_type" required>
+                    <option value="">— Select type —</option>
+                    <optgroup label="Conference">
+                      <option>Full Paper</option>
+                      <option>Short Paper</option>
+                      <option>Extended Abstract</option>
+                      <option>Poster Paper</option>
+                      <option>Demo Paper</option>
+                      <option>Workshop Paper</option>
+                      <option>Invited / Plenary Paper</option>
+                      <option>Book Chapter</option>
+                    </optgroup>
+                    <optgroup label="Journal">
+                      <option>Research Article</option>
+                      <option>Review Article</option>
+                      <option>Letter / Communication</option>
+                      <option>Technical Note</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="fg">
+                  <label for="fPubLink">Link to Publication</label>
+                  <input type="url" id="fPubLink" name="pub_link" placeholder="https://…"/>
+                  <span class="hint">DOI, conference page, or PDF link.</span>
+                </div>
+                <div class="fg">
+                  <label for="fFunding">Funding / Grant</label>
+                  <input type="text" id="fFunding" name="funding" placeholder="e.g. DOST-PCHRD Grant No.…"/>
+                </div>
+                <div class="fg">
+                  <label for="fIndexed">Indexed In</label>
+                  <select id="fIndexed" name="indexed_in">
+                    <option value="">— Select if applicable —</option>
+                    <option>Scopus</option>
+                    <option>Web of Science</option>
+                    <option>IEEE Xplore</option>
+                    <option>ACM Digital Library</option>
+                    <option>DBLP</option>
+                    <option>PubMed</option>
+                    <option>Google Scholar</option>
+                    <option>Other</option>
+                    <option>Not indexed</option>
+                  </select>
+                </div>
+
+              </div><!-- /form-grid -->
+
+              <div class="form-actions">
+                <button type="submit" class="btn-primary" id="submitBtn">📤 Submit Entry</button>
+                <button type="button" class="btn-ghost" onclick="resetForm()">Clear</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+      </div><!-- /form-layout -->
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<div id="toast"></div>
+
+<!-- SITE CREDIT -->
+<div style="position:fixed;bottom:10px;left:50%;transform:translateX(-50%);font-size:.65rem;color:rgba(255,255,255,.22);letter-spacing:.06em;z-index:50;white-space:nowrap;pointer-events:none;">
+  Developed by the ICS Research Division &amp; <span style="color:rgba(255,255,255,.35);font-weight:600;">[Your Name]</span>
+</div>
+
+<script>
+/* ──────────────────────────────────────────────────────────────────────
+   CONFIG — replace with your Google Apps Script Web App URL
+   Deploy: Extensions → Apps Script → Deploy → Web app
+   Execute as: Me  |  Who has access: Anyone
+────────────────────────────────────────────────────────────────────── */
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby7P9UNLz5A7cIakojpsVGuA6RK4z1ttfXp8mXoZqMxJtkQsYwCzi1n6ii1Ej7OnO4C/exec';
+
+/* ── PAGE NAVIGATION ──────────────────────────────────────────────── */
+const PAGE_META = {
+  dashboard:    ['Dashboard', 'Research activity overview'],
+  publications: ['Publications', 'Complete faculty research outputs'],
+  submit:       ['Submit Research', 'Record a new publication or conference presentation']
+};
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  const [title, meta] = PAGE_META[id] || ['', ''];
+  document.getElementById('topbarTitle').textContent = title;
+  document.getElementById('topbarMeta').textContent  = meta;
+  if (id === 'publications') renderPublications();
+}
+
+/* ── LOCAL CACHE ──────────────────────────────────────────────────── */
+function saveLocal(entry) {
+  const list = JSON.parse(sessionStorage.getItem('ics') || '[]');
+  list.unshift(entry);
+  sessionStorage.setItem('ics', JSON.stringify(list.slice(0, 200)));
+}
+function getLocal() { return JSON.parse(sessionStorage.getItem('ics') || '[]'); }
+
+
+/* ── NORMALIZE ENTRIES FROM GOOGLE SHEET ─────────────────────────── */
+// Sheet returns compressed header names; map them back to what renderers expect
+function normalizeRemoteEntry(e) {
+  // If already in native format (has conference_name or journal_name), skip
+  if (e.conference_name !== undefined || e.journal_name !== undefined) return e;
+  const isJour = (e.category || '').toLowerCase().includes('journal');
+  return {
+    submitted_at:      e.timestamp        || e.submitted_at || '',
+    category:          e.category         || '',
+    pub_type:          e.publication_type || e.pub_type     || '',
+    submitter:         e.submitter        || '',
+    email:             e.email            || '',
+    title:             e.title            || '',
+    authors:           e.authors          || '',
+    year:              e.year             || '',
+    conference_name:   isJour ? ''        : (e.venue || ''),
+    journal_name:      isJour ? (e.venue || '') : '',
+    conference_location: isJour ? ''      : (e.location_volume || ''),
+    volume_issue:      isJour ? (e.location_volume || '') : '',
+    conference_date:   isJour ? ''        : (e.date_pages || ''),
+    journal_pages:     isJour ? (e.date_pages || '') : '',
+    pages:             isJour ? ''        : (e.pages_doi || ''),
+    doi_url:           isJour ? (e.pages_doi || '') : '',
+    pub_link:          e.link_to_publication || e.pub_link  || '',
+    abstract:          e.abstract         || '',
+    funding:           e.funding          || '',
+    indexed_in:        e.indexed_in       || '',
+  };
+}
+
+/* ── DATA FETCH ───────────────────────────────────────────────────── */
+async function fetchRemote() {
+  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') return [];
+  try {
+    const r = await fetch(APPS_SCRIPT_URL + '?action=getAll');
+    const d = await r.json();
+    return d.entries || [];
+  } catch { return []; }
+}
+
+function merge(remote, local) {
+  const seen = new Set();
+  return [...local, ...remote].filter(e => {
+    const k = (e.title||'').trim().toLowerCase() + '|' + (e.submitter||'');
+    if (seen.has(k)) return false;
+    seen.add(k); return true;
+  });
+}
+
+let ALL_ENTRIES = [];
+let currentFilter = 'all';
+
+async function loadAll() {
+  const rawRemote = await fetchRemote();
+  const remote = rawRemote.map(normalizeRemoteEntry);
+  // Merge: real data + remote (Google Sheet) + local new submissions
+  ALL_ENTRIES = merge(remote, [...REAL_PUBLICATIONS, ...getLocal()]);
+  updateStats();
+  renderFeed();
+  drawChart();
+  renderPublications();
+}
+
+/* ── STATS ────────────────────────────────────────────────────────── */
+function updateStats() {
+  const yr = new Date().getFullYear();
+  const conf = ALL_ENTRIES.filter(e => e.category === 'Conference Proceedings Publication').length;
+  const jour = ALL_ENTRIES.filter(e => e.category === 'Journal Article').length;
+  const yrCount = ALL_ENTRIES.filter(e =>
+    String(e.year) === String(yr) ||
+    (e.submitted_at && e.submitted_at.startsWith(String(yr)))
+  ).length;
+
+  animNum('sTotal', ALL_ENTRIES.length);
+  animNum('sConf',  conf);
+  animNum('sJour',  jour);
+  animNum('sYear',  yrCount);
+  document.getElementById('sYearLbl').textContent = `Submissions in ${yr}`;
+}
+
+function animNum(id, target) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  let n = 0, step = Math.max(1, Math.floor(target / 18));
+  const t = setInterval(() => {
+    n = Math.min(n + step, target);
+    el.textContent = n;
+    if (n >= target) clearInterval(t);
+  }, 28);
+}
+
+/* ── RECENT FEED ──────────────────────────────────────────────────── */
+function renderFeed() {
+  const list = document.getElementById('feedList');
+  const entries = ALL_ENTRIES.slice(0, 8);
+  if (!entries.length) {
+    list.innerHTML = '<li class="feed-empty">No submissions yet.</li>';
+    return;
+  }
+  list.innerHTML = entries.map((e, i) => {
+    const isJour = e.category === 'Journal Article';
+    const venue  = isJour ? (e.journal_name||'') : (e.conference_name||'');
+    const dateStr = e.submitted_at
+      ? new Date(e.submitted_at).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})
+      : (e.year || '');
+    return `<li class="feed-item" style="animation-delay:${i*.05}s">
+      <div class="feed-top">
+        <span class="feed-title-text">${esc(e.title||'—')}</span>
+        <span class="feed-badge ${isJour?'b-jour':'b-conf'}">${isJour?'Journal':'Conference'}</span>
+      </div>
+      <div class="feed-meta-row">
+        <span class="feed-author">${esc(e.authors||'')}</span>
+        ${venue ? `<span class="feed-dot">●</span><span class="feed-venue">${esc(venue)}</span>` : ''}
+      </div>
+      <div class="feed-date">${dateStr}</div>
+    </li>`;
+  }).join('');
+}
+
+/* ── LINE CHART ───────────────────────────────────────────────────── */
+function drawChart() {
+  const canvas = document.getElementById('chartCanvas');
+  const empty  = document.getElementById('chartEmpty');
+  if (!ALL_ENTRIES.length) {
+    canvas.style.display = 'none';
+    empty.style.display  = 'block';
+    return;
+  }
+  canvas.style.display = 'block';
+  empty.style.display  = 'none';
+
+  // build year buckets
+  const yearMap = {};
+  ALL_ENTRIES.forEach(e => {
+    const y = parseInt(e.year) || new Date(e.submitted_at||'').getFullYear();
+    if (!y || isNaN(y)) return;
+    yearMap[y] = (yearMap[y]||0) + 1;
+  });
+  const years = Object.keys(yearMap).sort();
+  if (years.length < 1) { canvas.style.display='none'; empty.style.display='block'; return; }
+
+  const counts = years.map(y => yearMap[y]);
+  const maxVal = Math.max(...counts, 1);
+
+  // responsive canvas sizing
+  const container = canvas.parentElement;
+  const W = container.clientWidth - 0;
+  const H = 220;
+  canvas.width  = W;
+  canvas.height = H;
+
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  const PAD = { top:20, right:20, bottom:44, left:40 };
+  const gW  = W - PAD.left - PAD.right;
+  const gH  = H - PAD.top  - PAD.bottom;
+
+  // grid lines
+  const gridCount = 4;
+  ctx.strokeStyle = '#e4e9f4';
+  ctx.lineWidth   = 1;
+  ctx.setLineDash([4,4]);
+  for (let i = 0; i <= gridCount; i++) {
+    const y = PAD.top + (gH * (1 - i/gridCount));
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left+gW, y); ctx.stroke();
+    // y-axis labels
+    ctx.fillStyle   = '#8b99b8';
+    ctx.font        = '11px DM Sans, sans-serif';
+    ctx.textAlign   = 'right';
+    ctx.fillText(Math.round(maxVal * i/gridCount), PAD.left-6, y+4);
+  }
+  ctx.setLineDash([]);
+
+  // compute points
+  const pts = years.map((y, i) => ({
+    x: PAD.left + (years.length > 1 ? (i/(years.length-1)) * gW : gW/2),
+    y: PAD.top  + gH * (1 - counts[i]/maxVal),
+    val: counts[i], yr: y
+  }));
+
+  // fill gradient
+  const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top+gH);
+  grad.addColorStop(0,   'rgba(21,71,192,.18)');
+  grad.addColorStop(1,   'rgba(21,71,192,0)');
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, PAD.top+gH);
+  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pts[pts.length-1].x, PAD.top+gH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // line
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  if (pts.length > 2) {
+    for (let i=1; i<pts.length-1; i++) {
+      const cpX = (pts[i].x + pts[i+1].x)/2;
+      const cpY = (pts[i].y + pts[i+1].y)/2;
+      ctx.quadraticCurveTo(pts[i].x, pts[i].y, cpX, cpY);
+    }
+  }
+  ctx.lineTo(pts[pts.length-1].x, pts[pts.length-1].y);
+  ctx.strokeStyle = '#1547c0';
+  ctx.lineWidth   = 2.5;
+  ctx.stroke();
+
+  // dots + labels
+  pts.forEach(p => {
+    // outer ring
+    ctx.beginPath(); ctx.arc(p.x, p.y, 5.5, 0, Math.PI*2);
+    ctx.fillStyle = '#fff'; ctx.fill();
+    ctx.strokeStyle = '#1547c0'; ctx.lineWidth = 2.5; ctx.stroke();
+    // inner dot
+    ctx.beginPath(); ctx.arc(p.x, p.y, 2.5, 0, Math.PI*2);
+    ctx.fillStyle = '#1547c0'; ctx.fill();
+    // count label above dot
+    ctx.fillStyle   = '#0a0f1e';
+    ctx.font        = 'bold 12px DM Sans, sans-serif';
+    ctx.textAlign   = 'center';
+    ctx.fillText(p.val, p.x, p.y - 11);
+    // year label below
+    ctx.fillStyle   = '#8b99b8';
+    ctx.font        = '11px DM Sans, sans-serif';
+    ctx.fillText(p.yr, p.x, H - PAD.bottom + 18);
+  });
+}
+
+/* ── PUBLICATIONS PAGE ─────────────────────────────────────────────── */
+function filterPubs(cat, btn) {
+  currentFilter = cat;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPublications();
+}
+
+function renderPublications() {
+  const acc  = document.getElementById('pubAccordion');
+  const q    = (document.getElementById('pubSearch')?.value || '').toLowerCase();
+
+  let entries = ALL_ENTRIES;
+  if (currentFilter !== 'all') entries = entries.filter(e => e.category === currentFilter);
+  if (q) entries = entries.filter(e =>
+    (e.title||'').toLowerCase().includes(q) ||
+    (e.authors||'').toLowerCase().includes(q) ||
+    (e.submitter||'').toLowerCase().includes(q)
+  );
+
+  if (!entries.length) {
+    acc.innerHTML = `<div class="pub-none">No publications found${q ? ' for your search' : ''}.</div>`;
+    return;
+  }
+
+  // group by year
+  const byYear = {};
+  entries.forEach(e => {
+    const y = String(e.year || 'Unknown');
+    if (!byYear[y]) byYear[y] = [];
+    byYear[y].push(e);
+  });
+  const years = Object.keys(byYear).sort((a,b) => b - a);
+
+  acc.innerHTML = years.map((yr, idx) => {
+    const yEntries = byYear[yr];
+    const bycat = {};
+    yEntries.forEach(e => {
+      const c = e.category || 'Other';
+      if (!bycat[c]) bycat[c] = [];
+      bycat[c].push(e);
+    });
+
+    const catHTML = Object.keys(bycat).map(cat => {
+      const isJour = cat === 'Journal Article';
+      const items  = bycat[cat];
+      return `<div class="cat-group">
+        <div class="cat-group-title">${cat}s</div>
+        ${items.map((e, i) => `
+          <div class="pub-entry">
+            <span class="pub-num">${i+1}.</span>
+            <div>
+              <div class="pub-title">${esc(e.title||'—')}</div>
+              <div class="pub-detail">
+                ${e.authors ? `<strong>${esc(e.authors)}</strong>` : ''}
+                ${isJour ? (e.journal_name ? `. <span class="pub-venue">${esc(e.journal_name)}</span>` : '') : (e.conference_name ? `. <span class="pub-venue">${esc(e.conference_name)}</span>` : '')}
+                ${e.conference_location ? `, ${esc(e.conference_location)}` : ''}
+                ${e.volume_issue ? `, ${esc(e.volume_issue)}` : ''}
+                ${(e.pages||e.journal_pages) ? `, ${esc(e.pages||e.journal_pages)}` : ''}
+                ${(e.doi_url||e.pub_link) ? ` <a href="${esc(e.doi_url||e.pub_link)}" target="_blank" style="color:var(--blue);font-size:.75rem;margin-left:4px;">↗ Link</a>` : ''}
+              </div>
+              ${(e.pub_type || e.indexed_in || e.funding) ? `<div class="pub-tags">
+                ${e.pub_type ? `<span class="pub-tag" style="background:#e0e7ff;color:#3730a3;">${esc(e.pub_type)}</span>` : ''}
+                ${e.indexed_in && e.indexed_in !== 'Not indexed' ? `<span class="pub-tag tag-indexed">${esc(e.indexed_in)}</span>` : ''}
+                ${e.funding ? `<span class="pub-tag tag-funded">Funded</span>` : ''}
+              </div>` : ''}
+            </div>
+          </div>`).join('')}
+      </div>`;
+    }).join('');
+
+    const isOpen = idx === 0 ? 'open' : '';
+    return `<div class="acc-item ${isOpen}" id="acc-${yr}">
+      <div class="acc-head" onclick="toggleAcc('acc-${yr}')">
+        <span class="acc-year">${yr}</span>
+        <div class="acc-right">
+          <span class="acc-count">${yEntries.length} publication${yEntries.length>1?'s':''}</span>
+          <span class="acc-chevron">▾</span>
+        </div>
+      </div>
+      <div class="acc-body">
+        <div class="acc-inner">${catHTML}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleAcc(id) {
+  const el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+/* ── FORM ─────────────────────────────────────────────────────────── */
+function switchCat(cat, btn) {
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('fCategory').value =
+    cat === 'conf' ? 'Conference Proceedings Publication' : 'Journal Article';
+  document.querySelectorAll('.conf-f').forEach(el => el.style.display = cat === 'conf' ? '' : 'none');
+  document.querySelectorAll('.jour-f').forEach(el => el.style.display = cat === 'jour' ? '' : 'none');
+}
+// init
+document.querySelectorAll('.conf-f').forEach(el => el.style.display = '');
+document.querySelectorAll('.jour-f').forEach(el => el.style.display = 'none');
+
+function resetForm() {
+  document.getElementById('researchForm').reset();
+  switchCat('conf', document.querySelector('.cat-tab'));
+  document.querySelectorAll('.err').forEach(el => el.classList.remove('err'));
+}
+
+document.getElementById('researchForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  // validate
+  const req = this.querySelectorAll('[required]');
+  let ok = true;
+  req.forEach(f => {
+    f.classList.remove('err');
+    if (!f.value.trim()) { f.classList.add('err'); ok = false; }
+  });
+  if (!ok) { toast('Please fill in all required fields.', 'error'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Submitting…';
+
+  const fd = new FormData(this), payload = {};
+  fd.forEach((v,k) => payload[k] = v);
+  payload.submitted_at = new Date().toISOString();
+
+  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+    await new Promise(r => setTimeout(r, 900));
+    saveLocal(payload);
+    ALL_ENTRIES = merge([], [payload, ...ALL_ENTRIES]);
+    toast('✅ Submitted! (Demo mode — connect Google Sheets to persist.)');
+    resetForm();
+    updateStats(); renderFeed(); drawChart(); renderPublications();
+  } else {
+    try {
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST', mode: 'no-cors',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      saveLocal(payload);
+      ALL_ENTRIES = merge([], [payload, ...ALL_ENTRIES]);
+      toast('✅ Entry submitted successfully!');
+      resetForm();
+      updateStats(); renderFeed(); drawChart(); renderPublications();
+    } catch {
+      toast('⚠️ Submission failed. Please try again.', 'error');
+    }
+  }
+  btn.disabled = false;
+  btn.innerHTML = '📤 Submit Entry';
+});
+
+/* ── TOAST ────────────────────────────────────────────────────────── */
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (type === 'error' ? ' error' : '');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.className = '', 4000);
+}
+
+/* ── HELPERS ──────────────────────────────────────────────────────── */
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ── SEED DEMO DATA ───────────────────────────────────────────────── */
+function seedDemo() {
+const REAL_PUBLICATIONS = [
+  {
+    "year": "2025",
+    "category": "Conference Proceedings Publication",
+    "title": "Automatic generation of ABM narratives using simulation traces and LLM",
+    "authors": "Z. Arnejo, B. Gaudou, M. Saqalli, N. Bantayan",
+    "conference_name": "26th International Workshop on Multi-Agent-Based Simulation (MABS 2025)",
+    "conference_location": "Detroit, United States",
+    "conference_date": "May 2025",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2025-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2025",
+    "category": "Conference Proceedings Publication",
+    "title": "A dynamic query framework for research accessibility using OpenAI and LangChain",
+    "authors": "L. G. L. Talip, R. N. C. Recario",
+    "conference_name": "International Conference on Intelligent Computing (CompCom 2025)",
+    "conference_location": "",
+    "conference_date": "2025",
+    "indexed_in": "Scopus",
+    "doi_url": "http://dx.doi.org/10.1007/978-3-031-92605-1_11",
+    "submitted_at": "2025-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2025",
+    "category": "Conference Proceedings Publication",
+    "title": "Performance analysis of a spatial computing interface for electronics simulation and prototyping",
+    "authors": "K. P. David, A. J. Hao",
+    "conference_name": "Philippine Computing Science Congress (PCSC 2025)",
+    "conference_location": "",
+    "conference_date": "2025",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2025-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2025",
+    "category": "Conference Proceedings Publication",
+    "title": "Cross-sectional analysis of bacterial co-occurrence networks of bat gut-associated microbiomes sampled across various cave sites in CALABARZON, Philippines",
+    "authors": "R. T. Santos, A. J. Jacildo, A. D. Montecillo, R. J. D. Flores, M. P. A. D. Leon",
+    "conference_name": "International Workshop on Mathematical Biology (IWOMB 2025)",
+    "conference_location": "",
+    "conference_date": "January 2025",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2025-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2025",
+    "category": "Journal Article",
+    "title": "Taxonomic analysis of bacterial and archaeal communities collected from the Manleluag hyperalkaline spring in Pangasinan, Philippines using two bioinformatic pipelines",
+    "authors": "M. R. U. Anacleto, J. M. Samaniego, M. C. C. Manuel, N. B. Lantican, M. G. Q. Diaz",
+    "journal_name": "Philippine e-Journal for Applied Research and Development",
+    "volume_issue": "Vol. 15 (2025)",
+    "journal_pages": "pp. 1–13",
+    "indexed_in": "",
+    "doi_url": "https://pejard.slu.edu.ph/vol.15/2025.01.03.pdf",
+    "submitted_at": "2025-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2025",
+    "category": "Journal Article",
+    "title": "Promoting free flows via competition law: An AI industry blueprint for Southeast Asia",
+    "authors": "C. P. Osorio, J. I. N. G. Cruz",
+    "journal_name": "Telecommunications Policy",
+    "volume_issue": "Vol. 49 (2025)",
+    "indexed_in": "Scopus",
+    "doi_url": "http://dx.doi.org/10.1016/j.telpol.2025.102953",
+    "submitted_at": "2025-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_pages": "",
+    "pages": ""
+  },
+  {
+    "year": "2025",
+    "category": "Journal Article",
+    "title": "Machine learning-driven analysis of agro-climatic data for temperature modeling and forecasting in Philippine urban areas",
+    "authors": "J. I. N. G. Cruz, J. M. L. de Vera, K. E. Pilario",
+    "journal_name": "Urban Climate",
+    "volume_issue": "Vol. 60 (2025)",
+    "indexed_in": "Scopus",
+    "doi_url": "http://dx.doi.org/10.1016/j.uclim.2025.102339",
+    "submitted_at": "2025-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_pages": "",
+    "pages": ""
+  },
+  {
+    "year": "2025",
+    "category": "Journal Article",
+    "title": "Communicating agent-based models to stakeholders: A scoping review",
+    "authors": "Z. Arnejo, B. Gaudou, M. Saqalli, N. Bantayan",
+    "journal_name": "Journal of Artificial Societies and Social Simulation",
+    "volume_issue": "Vol. 28 (2025)",
+    "indexed_in": "Scopus",
+    "doi_url": "http://dx.doi.org/10.18564/jasss.5623",
+    "submitted_at": "2025-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_pages": "",
+    "pages": ""
+  },
+  {
+    "year": "2025",
+    "category": "Journal Article",
+    "title": "Luntian: An agent-based model of an industrial tree plantation for promoting sustainable harvesting in the Philippines",
+    "authors": "Z. Arnejo, B. Gaudou, M. Saqalli, N. Bantayan",
+    "journal_name": "Forests",
+    "volume_issue": "Vol. 16 (2025)",
+    "journal_pages": "p. 1293",
+    "indexed_in": "Scopus",
+    "doi_url": "http://dx.doi.org/10.3390/f16081293",
+    "submitted_at": "2025-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2024",
+    "category": "Conference Proceedings Publication",
+    "title": "Hybrid neural-rule based architecture for Filipino stemming with fine-tuned BERT variants",
+    "authors": "A. A. A. Naguio, R. E. O. Roxas",
+    "conference_name": "Pacific Asia Conference on Language, Information and Computation",
+    "conference_location": "Tokyo, Japan",
+    "conference_date": "December 2024",
+    "indexed_in": "Scopus",
+    "doi_url": "",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2024",
+    "category": "Conference Proceedings Publication",
+    "title": "Large language models and natural language processing on minority languages: A systematic review",
+    "authors": "R. E. O. Roxas",
+    "conference_name": "Pacific Asia Conference on Language, Information and Computation",
+    "conference_location": "Tokyo, Japan",
+    "conference_date": "December 2024",
+    "indexed_in": "Scopus",
+    "doi_url": "",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2024",
+    "category": "Conference Proceedings Publication",
+    "title": "Kolmogorov-Arnold network for machine learning-based motor condition diagnosis",
+    "authors": "C. A. D. Rosario, R. C. Camaclang, E. Prieto-Araujo, O. Gomis-Bellmunt",
+    "conference_name": "2024 IEEE 7th International Conference on Electrical, Electronics and System Engineering (ICEESE)",
+    "conference_location": "",
+    "conference_date": "November 2024",
+    "indexed_in": "Scopus",
+    "doi_url": "",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 1–5"
+  },
+  {
+    "year": "2024",
+    "category": "Journal Article",
+    "title": "Scientific landscape on opportunities and challenges of large language models and natural language processing",
+    "authors": "R. E. O. Roxas, R. N. C. Recario",
+    "journal_name": "Indonesian Journal of Electrical Engineering and Computer Science",
+    "volume_issue": "Vol. 36 (2024)",
+    "journal_pages": "pp. 1–1x",
+    "indexed_in": "Scopus",
+    "doi_url": "http://dx.doi.org/10.11591/ijeecs.v36.i1.pp1-1x",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2024",
+    "category": "Conference Proceedings Publication",
+    "title": "The value of transdisciplinarity in creating solutions to wicked problems: The HEAL-PH experience in a mobile app hackathon",
+    "authors": "A. D. Madrid, V. R. Madrid, A. F. Cayetano, S. P. Catelo, A. T. Orillo, R. L. Belleza",
+    "conference_name": "7th Asia Future Conference",
+    "conference_location": "Bangkok, Thailand",
+    "conference_date": "August 2024",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2024",
+    "category": "Conference Proceedings Publication",
+    "title": "Regulating AI in education and empowering educators: Policy, governance, and ethical considerations (invited plenary paper)",
+    "authors": "J. P. Pabico",
+    "conference_name": "1st Research Conference on Mission-Driven Education (RCMDE 2024)",
+    "conference_location": "Naga City",
+    "conference_date": "July 2024",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2024",
+    "category": "Journal Article",
+    "title": "A multi-objective site selection model for evacuation centers in Taguig City, Philippines",
+    "authors": "E. Rico, J. Rabajante, J. Tubay, A. Lapitan, V. R. Madrid",
+    "journal_name": "Natural Hazards",
+    "volume_issue": "2024",
+    "indexed_in": "Scopus",
+    "doi_url": "https://link.springer.com/article/10.1007/s11069-024-06485-5",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_pages": "",
+    "pages": ""
+  },
+  {
+    "year": "2024",
+    "category": "Journal Article",
+    "title": "Validation of harvest date estimator mobile application for banana (BanaTech Version 1): A way towards a more efficient farm planning",
+    "authors": "A. J. Hao et al.",
+    "journal_name": "Philippine Journal of Crop Science (PJCS)",
+    "volume_issue": "2024",
+    "journal_pages": "pp. 12–21",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2024",
+    "category": "Conference Proceedings Publication",
+    "title": "Text simplification system for legal contract review",
+    "authors": "J. M. Justo, R. N. C. Recario",
+    "conference_name": "Future of Information and Communication Conference",
+    "conference_date": "2024",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 105–123"
+  },
+  {
+    "year": "2024",
+    "category": "Conference Proceedings Publication",
+    "title": "A non-transfer learning approach in exploring the variations of extractive summarization components for a low-resource language",
+    "authors": "R. B. Valencia, R. N. C. Recario",
+    "conference_name": "Future of Information and Communication Conference",
+    "conference_date": "2024",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 519–537"
+  },
+  {
+    "year": "2024",
+    "category": "Journal Article",
+    "title": "Assessment and local community perception on the water quality of the seven crater lakes of San Pablo City, Philippines",
+    "authors": "J. V. R. Pleto, D. B. Magcale-Macandog, J. G. Campang, Y. C. L. Cabilon, M. G. L. D. Perez, F. A. Natuel, N. J. A. Larida, J. P. Pabico, C. D. Predo, V. G. V. Paller",
+    "journal_name": "Journal of Environmental Science and Management",
+    "volume_issue": "Vol. 27 (2024)",
+    "journal_pages": "pp. 50–60",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2024",
+    "category": "Journal Article",
+    "title": "Unsupervised literature mining approaches for extracting relationships pertaining to habitats and reproductive conditions of plant species",
+    "authors": "R. Gabud, P. Lapitan, V. Mariano, E. Mendoza, N. Pampolina, M. A. A. Clariño, R. Batista-Navarro",
+    "journal_name": "Frontiers in Artificial Intelligence",
+    "volume_issue": "Vol. 7 (2024)",
+    "journal_pages": "p. 1371411",
+    "indexed_in": "Scopus",
+    "doi_url": "",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2024",
+    "category": "Journal Article",
+    "title": "Peanut mold detection via marker-based watershed segmentation and an artificial neural network with feedforward backpropagation",
+    "authors": "S. D. D. Lagrosas, L. K. R. Lactuan",
+    "journal_name": "Philippine e-Journal for Applied Research and Development",
+    "volume_issue": "Vol. 14 (2024)",
+    "journal_pages": "pp. 1–14",
+    "indexed_in": "",
+    "doi_url": "https://pejard.slu.edu.ph/vol.14/2024.01.12.pdf",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2024",
+    "category": "Journal Article",
+    "title": "Decoding Philippine grocery receipt item names using k-nearest neighbor search and long short-term memory network",
+    "authors": "K. J. Z. C. Tan, K. L. M. Tan, R. N. C. Recario",
+    "journal_name": "Lecture Notes in Networks and Systems",
+    "volume_issue": "Vol. 1016 (2024)",
+    "indexed_in": "Scopus",
+    "doi_url": "http://dx.doi.org/10.1007/978-3-031-62281-6_26",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_pages": "",
+    "pages": ""
+  },
+  {
+    "year": "2024",
+    "category": "Journal Article",
+    "title": "A non-transfer learning approach in exploring the variations of extractive summarization components for a low-resource language",
+    "authors": "R. B. Valencia, R. N. C. Recario",
+    "journal_name": "Lecture Notes in Networks and Systems",
+    "volume_issue": "Vol. 919 (2024)",
+    "indexed_in": "Scopus",
+    "doi_url": "http://dx.doi.org/10.1007/978-3-031-53960-2_33",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_pages": "",
+    "pages": ""
+  },
+  {
+    "year": "2024",
+    "category": "Journal Article",
+    "title": "Text simplification system for legal contract review",
+    "authors": "J. M. Justo, R. N. C. Recario",
+    "journal_name": "Lecture Notes in Networks and Systems",
+    "volume_issue": "Vol. 919 (2024)",
+    "indexed_in": "Scopus",
+    "doi_url": "http://dx.doi.org/10.1007/978-3-031-53960-2_8",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_pages": "",
+    "pages": ""
+  },
+  {
+    "year": "2024",
+    "category": "Journal Article",
+    "title": "Lip reading Filipino words using convolutional neural networks and recurrent neural networks",
+    "authors": "S. D. A. Crespo, R. N. C. Recario",
+    "journal_name": "Lecture Notes in Networks and Systems",
+    "volume_issue": "Vol. 823 (2024)",
+    "indexed_in": "Scopus",
+    "doi_url": "http://dx.doi.org/10.1007/978-3-031-47724-9_51",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_pages": "",
+    "pages": ""
+  },
+  {
+    "year": "2024",
+    "category": "Journal Article",
+    "title": "Machine-learning model for program selection in technical and vocational educational training (TVET) in Kenya",
+    "authors": "D. O. Otewa, J. Samaniego",
+    "journal_name": "The International Journal of Science & Technoledge",
+    "volume_issue": "Vol. 12 (2024)",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_pages": "",
+    "pages": ""
+  },
+  {
+    "year": "2024",
+    "category": "Journal Article",
+    "title": "A novel automatic definition selector and scoring scheme for the identification of Filipino metaphors",
+    "authors": "L. M. L. Ocampo, M. A. A. D. Clariño",
+    "journal_name": "2024 6th International Conference on Computer Communication and the Internet (ICCCI)",
+    "volume_issue": "2024",
+    "journal_pages": "pp. 24–29",
+    "indexed_in": "Scopus",
+    "doi_url": "",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2024",
+    "category": "Journal Article",
+    "title": "Utilizing Naïve Bayes for multidimensional poverty classification and identifying key poverty determinants",
+    "authors": "J. I. N. G. Cruz, P. C. Naval",
+    "journal_name": "2024 6th International Conference on Computer Communication and the Internet (ICCCI)",
+    "volume_issue": "2024",
+    "journal_pages": "pp. 12–17",
+    "indexed_in": "Scopus",
+    "doi_url": "http://dx.doi.org/10.1109/ICCCI62159.2024.10674408",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2024",
+    "category": "Journal Article",
+    "title": "Harnessing the potential of open-source database platform and related web technologies for managing seed inventory of cereals germplasm collection",
+    "authors": "R. C. Camaclang III, S. G. Bon, A. J. J. Hao, J. P. D. Banares",
+    "journal_name": "The Philippine Journal of Crop Science",
+    "volume_issue": "Vol. 49 (2024)",
+    "journal_pages": "pp. 16–24",
+    "indexed_in": "Web of Science",
+    "doi_url": "",
+    "submitted_at": "2024-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2023",
+    "category": "Conference Proceedings Publication",
+    "title": "3DKD - An effective knowledge distillation-based model for human fall detection",
+    "authors": "H. X. Trieu, M. A. A. D. Clariño, V. Y. Mariano, V. R. M. Madrid, R. M. H. Borromeo, T. T. Tran",
+    "conference_name": "2023 RIVF International Conference on Computing and Communication Technologies",
+    "conference_date": "December 23–25, 2023",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2023-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2023",
+    "category": "Conference Proceedings Publication",
+    "title": "A hybrid of rule-based and transformer-based approaches for relation extraction in biodiversity literature",
+    "authors": "R. Gabud, P. Lapitan, V. Mariano, E. Mendoza, N. Pampolina, M. A. A. Clariño, R. T. Batista-Navarro",
+    "conference_name": "2nd Workshop on Pattern-based Approaches to NLP in the Age of Deep Learning",
+    "conference_date": "December 2023",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2023-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 103–113"
+  },
+  {
+    "year": "2023",
+    "category": "Conference Proceedings Publication",
+    "title": "Agent-based modeling for insect resistance management",
+    "authors": "E. P. Alcantara, A. J. Jacildo",
+    "conference_name": "ISSAAS International Scientific Congress and General Meeting 2023",
+    "conference_location": "Acacia Hotel Manila, Philippines",
+    "conference_date": "November 2023",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2023-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2023",
+    "category": "Conference Proceedings Publication",
+    "title": "BanaTech: A data-driven progressive web application for Lakatan and Saba/Cardaba harvest date estimation",
+    "authors": "A. Hao et al.",
+    "conference_name": "ISSAAS International Scientific Congress & General Meeting",
+    "conference_date": "November 2023",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2023-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2023",
+    "category": "Journal Article",
+    "title": "Extracting graphs from plant leaf venations using image processing",
+    "authors": "A. K. D. Balangcod, J. P. Pabico",
+    "journal_name": "Fourth International Conference on Image Processing and Capsule Networks (ICIPCN 2023)",
+    "volume_issue": "Vol. 798 (2023)",
+    "journal_pages": "p. 131",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2023-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2023",
+    "category": "Conference Proceedings Publication",
+    "title": "Predicting land cover map changes in the Philippines for use in LULC-based carbon capture monitoring using deep learning",
+    "authors": "R. Camaclang, F. Ballesteros, A. Labao",
+    "conference_name": "18th International Conference on Environmental Science and Technology",
+    "conference_date": "August 2023",
+    "indexed_in": "Scopus",
+    "doi_url": "",
+    "submitted_at": "2023-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2023",
+    "category": "Journal Article",
+    "title": "Hinay: A mobile application for real-time traffic sign detection",
+    "authors": "D. P. M. Aguilar, R. N. C. Recario",
+    "journal_name": "Science and Information Conference",
+    "volume_issue": "2023",
+    "journal_pages": "pp. 1058–1078",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2023-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2023",
+    "category": "Conference Proceedings Publication",
+    "title": "Hinay: A mobile application for real-time traffic sign detection",
+    "authors": "R. N. Recario, D. P. M. Aguilar",
+    "conference_name": "Computing Conference 2023",
+    "conference_location": "London",
+    "conference_date": "June 2023",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2023-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2023",
+    "category": "Conference Proceedings Publication",
+    "title": "Developing a Bayesian model of climate-induced lake overturn in Talisay, Taal Lake",
+    "authors": "D. B. Magcale-Macandog, A. R. Salvacion, J. P. Pabico, K. N. Tingson, M. A. Reblora, J. D. Edrial, F. P. Lansigan, M. T. Zafaralla",
+    "conference_name": "Ecosystem and Species Habitat Modeling for Conservation and Restoration (Springer Nature)",
+    "conference_date": "April 2023",
+    "indexed_in": "Scopus",
+    "doi_url": "http://dx.doi.org/10.1007/978-981-99-0131-9_6",
+    "submitted_at": "2023-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 101–119"
+  },
+  {
+    "year": "2023",
+    "category": "Conference Proceedings Publication",
+    "title": "A QR code-based digital contact tracing system for COVID-19",
+    "authors": "E. Isungga, C. Khan, R. Recario",
+    "conference_name": "23rd PCSC",
+    "conference_location": "Cebu City",
+    "conference_date": "March 2023",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2023-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2023",
+    "category": "Conference Proceedings Publication",
+    "title": "Kar-mo Kolektib: An automated vehicle data miner using computer vision",
+    "authors": "J. Cantos, V. Madrid",
+    "conference_name": "23rd PCSC",
+    "conference_location": "Cebu City",
+    "conference_date": "March 2023",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2023-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2023",
+    "category": "Conference Proceedings Publication",
+    "title": "English-Filipino speech topic tagger using automatic speech recognition modeling and topic modeling",
+    "authors": "J. Tumpalan, R. Recario",
+    "conference_name": "Advances in Information and Communication (FICC 2023)",
+    "volume_issue": "Vol. 652 (2023)",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2023-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_name": "",
+    "pages": "pp. 427–445"
+  },
+  {
+    "year": "2023",
+    "category": "Journal Article",
+    "title": "Leaf-based classification of important indigenous tree species by different feature extraction techniques and selected classification algorithms",
+    "authors": "E. V. D. Mangaoang, J. M. Samaniego",
+    "journal_name": "International Journal of Advanced Computer Science and Applications (IJACSA)",
+    "volume_issue": "Vol. 14 (2023)",
+    "journal_pages": "pp. 35–41",
+    "indexed_in": "Scopus",
+    "doi_url": "http://dx.doi.org/10.14569/IJACSA.2023.0140104",
+    "submitted_at": "2023-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2023",
+    "category": "Journal Article",
+    "title": "Design and implementation of cost-effective IT-based phenotyping tools for research on eggplant breeding techniques",
+    "authors": "V. R. M. Madrid, A. V. Magnaye, A. A. Porca, L. D. Taylo, D. M. Hautea",
+    "journal_name": "Asia Future Conference",
+    "volume_issue": "6B (2023)",
+    "journal_pages": "pp. 103–108",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2023-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2023",
+    "category": "Journal Article",
+    "title": "An agent-based model of a sustainable forest operation in a theoretical lowland dipterocarp forest modeled after Mount Makiling Forest Reserve, Philippines",
+    "authors": "Z. Arnejo, L. Barua, P. J. Ramirez, C. T. Jr., N. Bantayan",
+    "journal_name": "Forests",
+    "volume_issue": "Vol. 14 (2023)",
+    "journal_pages": "p. 428",
+    "indexed_in": "Scopus",
+    "doi_url": "http://dx.doi.org/10.3390/f14020428",
+    "submitted_at": "2023-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2023",
+    "category": "Journal Article",
+    "title": "Automated classification and identification system for freshwater algae using convolutional neural networks",
+    "authors": "J. O.-N. V. Geronimo, E. D. Arguelles, K. J. M. Abriol-Santos",
+    "journal_name": "Philippine Journal of Science",
+    "volume_issue": "Vol. 152 (2023)",
+    "journal_pages": "pp. 325–335",
+    "indexed_in": "Scopus",
+    "doi_url": "http://dx.doi.org/10.56899/152.01.25",
+    "submitted_at": "2023-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2022",
+    "category": "Conference Proceedings Publication",
+    "title": "Sentiment analysis and topic classification of Twitter-based data set on the face-to-face classes resumption in the Philippines during the COVID-19 pandemic",
+    "authors": "C. R. Catayna, M. A. A. D. Clariño",
+    "conference_name": "2022 2nd International Conference in Information and Computing Research (iCORE)",
+    "conference_date": "December 2022",
+    "indexed_in": "IEEE Xplore",
+    "doi_url": "",
+    "submitted_at": "2022-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 39–44"
+  },
+  {
+    "year": "2022",
+    "category": "Conference Proceedings Publication",
+    "title": "An agent-based modeling and simulation tool for the exploration of the effects of masks and vaccines on COVID-19 spread",
+    "authors": "J. I. N. G. Cruz, M. A. A. D. Clariño",
+    "conference_name": "2022 2nd International Conference in Information and Computing Research (iCORE)",
+    "conference_date": "December 2022",
+    "indexed_in": "IEEE Xplore",
+    "doi_url": "",
+    "submitted_at": "2022-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 60–65"
+  },
+  {
+    "year": "2022",
+    "category": "Conference Proceedings Publication",
+    "title": "A dynamic reconstitution of the vegetation of a pre-neolithic French Mediterranean territory using plant functional types",
+    "authors": "Z. Arnejo, M. Saqalli, B. Gaudou, P. Bannwart, F. Loup-Hadamard",
+    "conference_name": "42e Rencontres Internationales d'Archéologie et d'Histoire de Nice Côte d'Azur",
+    "conference_location": "Nice, France",
+    "conference_date": "October 12–14, 2022",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2022-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2022",
+    "category": "Journal Article",
+    "title": "Development of a real-time wireless sensor network-based information system for efficient irrigation of upland and lowland crop production systems",
+    "authors": "R. C. Ramirez, E. S. Agulto, S. D. Glaser, Z. Zhang, J. A. C. Hermocilla, V. B. Ella",
+    "journal_name": "IOP Conference Series: Earth and Environmental Science",
+    "volume_issue": "Vol. 1038 (2022)",
+    "journal_pages": "p. 012028",
+    "indexed_in": "Scopus",
+    "doi_url": "",
+    "submitted_at": "2022-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2022",
+    "category": "Conference Proceedings Publication",
+    "title": "Reconstituting a pre-neolithic territory by implementing plant functional types: Application to the Roussillon territory (France)",
+    "authors": "Z. Arnejo, P. Bannwart, F. Loup-Hadamard, M. Cahierre, J. Azuara et al.",
+    "conference_name": "International Environmental Modelling and Software Society (iEMSs 2022)",
+    "conference_location": "Bruxelles, Belgium",
+    "conference_date": "July 2022",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2022-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2022",
+    "category": "Conference Proceedings Publication",
+    "title": "Visualizing ABM submodels to promote stakeholder participation: A look into sustainable forest operations",
+    "authors": "Z. Arnejo, B. Gaudou, M. Saqalli, B. Nathaniel, B. Leonardo et al.",
+    "conference_name": "International Environmental Modelling and Software Society (iEMSs 2022)",
+    "conference_location": "Bruxelles, Belgium",
+    "conference_date": "July 2022",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2022-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2022",
+    "category": "Journal Article",
+    "title": "Automated classification of selected Philippine wood species using image analysis and artificial neural networks",
+    "authors": "R. Mendoza, A. Jacildo, V. Madrid, R. Mercado, A. Romano, A. Cantalejo, L. Urriza, V. Daracan, R. Manalo",
+    "journal_name": "Philippine Journal of Science (PJS)",
+    "volume_issue": "2022",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2022-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_pages": "",
+    "pages": ""
+  },
+  {
+    "year": "2022",
+    "category": "Journal Article",
+    "title": "Molecular docking of ecdysone agonists and limonoid components of calamondin seeds to tobacco budworm ecdysone receptor",
+    "authors": "A. T. Abrera, M. A. Castrosanto, J. A. C. Hermocilla, M. N. Manalo",
+    "journal_name": "KIMIKA",
+    "volume_issue": "Vol. 33 (2022)",
+    "journal_pages": "pp. 09–19",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2022-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2021",
+    "category": "Journal Article",
+    "title": "Image-based crop leaf disease identification using convolutional neural network (CNN)",
+    "authors": "J. Fernandez, M. Clariño",
+    "journal_name": "Philippine Computing Journal",
+    "volume_issue": "Vol. XVI (2021)",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2021-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_pages": "",
+    "pages": ""
+  },
+  {
+    "year": "2021",
+    "category": "Conference Proceedings Publication",
+    "title": "Aspect-based sentiment analysis of user created game reviews",
+    "authors": "I. M. Urriza, M. A. A. Clariño",
+    "conference_name": "2021 24th Conference of the Oriental COCOSDA",
+    "conference_date": "2021",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2021-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 76–81"
+  },
+  {
+    "year": "2021",
+    "category": "Journal Article",
+    "title": "Solving multi-pickup and delivery problem with time windows using ant colony optimization",
+    "authors": "T. Tran, M. A. A. Clariño",
+    "journal_name": "Journal of Telecommunication, Electronic and Computer Engineering (JTEC)",
+    "volume_issue": "Vol. 13 (2021)",
+    "journal_pages": "pp. 35–41",
+    "indexed_in": "Scopus",
+    "doi_url": "",
+    "submitted_at": "2021-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2021",
+    "category": "Conference Proceedings Publication",
+    "title": "A lightweight model for falling detection",
+    "authors": "T. X. Hoa, V. R. M. Madrid, E. A. Albacea",
+    "conference_name": "2021 RIVF International Conference on Computing and Communication Technologies (RIVF)",
+    "conference_date": "August 2021",
+    "indexed_in": "IEEE Xplore",
+    "doi_url": "",
+    "submitted_at": "2021-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 1–5"
+  },
+  {
+    "year": "2021",
+    "category": "Journal Article",
+    "title": "Genetic mapping by sequencing more precisely detects loci responsible for anaerobic germination tolerance in rice",
+    "authors": "J. C. I. Ignacio, M. Zaidem, C. C. Jr., S. Dixit, T. Kretzschmar, J. M. Samaniego, M. S. Mendioro, D. Weigel, E. M. Septiningsih",
+    "journal_name": "Plants",
+    "volume_issue": "Vol. 10 (2021)",
+    "journal_pages": "p. 705",
+    "indexed_in": "Scopus",
+    "doi_url": "https://www.mdpi.com/2223-7747/10/4/705/pdf",
+    "submitted_at": "2021-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2021",
+    "category": "Conference Proceedings Publication",
+    "title": "Insect resistance management of Bt corn in the Philippines",
+    "authors": "E. Alcantara, A. Jacildo, J. Rabajante, L. Portales, J. Adorada, B. Caoili",
+    "conference_name": "CSIRO Publishing",
+    "conference_date": "February 2021",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2021-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "p. 165"
+  },
+  {
+    "year": "2021",
+    "category": "Conference Proceedings Publication",
+    "title": "Examining SONA 2020-related tweets through sentiment analysis",
+    "authors": "R. Recario, L. Talip, R. Cruz, M. Layones et al.",
+    "conference_name": "Linguistic Society of the Philippines International Conference",
+    "conference_date": "2021",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2021-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2021",
+    "category": "Conference Proceedings Publication",
+    "title": "An agent-based model of a sustainable forest operation: A case of a low mountain dipterocarp forest in the Philippines",
+    "authors": "Z. Arnejo, B. Leonardo, R. Paul, T. C. Jr, B. Nathaniel",
+    "conference_name": "G1st Conference GAMA Days 2021",
+    "conference_date": "June 2021",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2021-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2021",
+    "category": "Conference Proceedings Publication",
+    "title": "Landscape, vegetation and resources' modeling: Reconstituting the pre-neolithic Roussillon territory (France)",
+    "authors": "Z. Arnejo, P. Bannwart, F. Loup-Hadamard, M. Cahierre, Z. Iguenad et al.",
+    "conference_name": "GAMA Days 2021",
+    "conference_date": "June 2021",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2021-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2021",
+    "category": "Conference Proceedings Publication",
+    "title": "Automated detection of coconut palm encroachment in the Mt. Makiling Forest Reserve in Laguna, Philippines",
+    "authors": "Z. Arnejo, J. Pabico, N. Bantayan",
+    "conference_name": "IEEE Eighth International Conference on Communications and Electronics (IEEE ICCE 2020)",
+    "conference_location": "Phu Quoc Island, Vietnam",
+    "conference_date": "13–15 January 2021",
+    "indexed_in": "IEEE Xplore",
+    "doi_url": "",
+    "submitted_at": "2021-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 686–691"
+  },
+  {
+    "year": "2021",
+    "category": "Conference Proceedings Publication",
+    "title": "ConvXT: A convolutional neural network express tool for image classification applications",
+    "authors": "M. K. Mojar, V. R. Madrid",
+    "conference_name": "ACRES 2021",
+    "conference_date": "24 Sept 2021",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2021-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2021",
+    "category": "Conference Proceedings Publication",
+    "title": "Comparative analysis of packing algorithms for the Tetris problem and game",
+    "authors": "G. Grajo, C. C. Cepe",
+    "conference_name": "ACRES 2021",
+    "conference_date": "24 Sept 2021",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2021-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2021",
+    "category": "Conference Proceedings Publication",
+    "title": "Detecting leafminer damage in images of eggplant leaves using convolutional neural networks",
+    "authors": "A. N. Cuevas, V. R. Madrid",
+    "conference_name": "ACRES 2021",
+    "conference_date": "24 Sept 2021",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2021-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2021",
+    "category": "Conference Proceedings Publication",
+    "title": "PeVar: Automated pedigree verification of rice",
+    "authors": "C. D. Era, A. Jacildo, J. C. Ignacio",
+    "conference_name": "ACRES 2021",
+    "conference_date": "24 Sept 2021",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2021-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2021",
+    "category": "Conference Proceedings Publication",
+    "title": "Developing open-source data repository solutions for cancer research in the Philippines: A brief review",
+    "authors": "M. R. Anacleto, A. K. Macaraeg, J. Gaudillo, L. R. Baltazar, B. Tiangco, J. Albia",
+    "conference_name": "ACRES 2021",
+    "conference_date": "24 Sept 2021",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2021-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2021",
+    "category": "Journal Article",
+    "title": "Genomic insights into the antimicrobial and anticancer potential of Streptomyces sp. A1-08 isolated from volcanic soils of Mount Mayon, Philippines",
+    "authors": "K. Oliveros, A. Rosana, A. Montecillo, R. Opulencia, A. Jacildo, T. Zulaybar, A. Raymundo",
+    "journal_name": "Philippine Journal of Science",
+    "volume_issue": "December 2021",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2021-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_pages": "",
+    "pages": ""
+  },
+  {
+    "year": "2020",
+    "category": "Conference Proceedings Publication",
+    "title": "Building a Filipino-English bilingual knowledge taxonomy using clustering: Towards cross-lingual word embedding model integration of local AANR knowledge",
+    "authors": "R. L. Mendiola, C. Bucu-Flores, C. Khan",
+    "conference_name": "3rd Information and Computing Education Conference (CSP-ICE 2020)",
+    "conference_date": "2020",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2020-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2020",
+    "category": "Conference Proceedings Publication",
+    "title": "Deep learning approach to land cover classification using multitemporal Sentinel-1 SAR images of Quinali-A Watershed",
+    "authors": "A. J. Hao, C. Khan, R. V. Cruz, D. Mercado",
+    "conference_name": "3rd Information and Computing Education Conference (CSP-ICE 2020)",
+    "conference_date": "2020",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2020-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2020",
+    "category": "Conference Proceedings Publication",
+    "title": "Image-based crop leaf disease identification using convolutional neural network (CNN)",
+    "authors": "J. Fernandez, M. A. A. Clariño",
+    "conference_name": "3rd Information and Computing Education Conference (CSP-ICE 2020)",
+    "conference_date": "2020",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2020-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2020",
+    "category": "Conference Proceedings Publication",
+    "title": "Design and implementation of an autonomous surface vehicle platform for water quality monitoring",
+    "authors": "M. D. Queliste, J. A. C. Hermocilla, J. P. Pabico",
+    "conference_name": "20th Philippine Computing Science Congress (PCSC 2020)",
+    "conference_location": "Philippines",
+    "conference_date": "2020",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2020-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 14–25"
+  },
+  {
+    "year": "2020",
+    "category": "Conference Proceedings Publication",
+    "title": "Characterization and classification of malware traffic over the Tor network",
+    "authors": "M. B. B. de Robles, J. A. C. Hermocilla, J. P. Pabico",
+    "conference_name": "20th Philippine Computing Science Congress (PCSC 2020)",
+    "conference_location": "Philippines",
+    "conference_date": "2020",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2020-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 78–87"
+  },
+  {
+    "year": "2020",
+    "category": "Conference Proceedings Publication",
+    "title": "Design and implementation of a graph-based database system for virtual reality museums and heritage sites applications",
+    "authors": "K. J. Jaen, J. Pabico",
+    "conference_name": "PCSC 2020",
+    "conference_date": "2020",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2020-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2020",
+    "category": "Conference Proceedings Publication",
+    "title": "Automatic identification of selected dicot plant species using graph properties from leaf venations",
+    "authors": "A. K. Balangcod, J. Pabico",
+    "conference_name": "PCSC 2020",
+    "conference_date": "2020",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2020-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2020",
+    "category": "Journal Article",
+    "title": "Web application for managing insecticide resistance of mango pests in the Philippines",
+    "authors": "M. G. C. B. Carandang",
+    "journal_name": "Philippine e-Journal for Applied Research and Development",
+    "volume_issue": "Vol. 10 (2020)",
+    "journal_pages": "pp. B:1–8",
+    "indexed_in": "",
+    "doi_url": "http://pejard.slu.edu.ph/vol.10/2020.10.02.pdf",
+    "submitted_at": "2020-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2020",
+    "category": "Journal Article",
+    "title": "A kidney exchange matching application using the blossom and Hungarian algorithms for pairwise and multiway matching",
+    "authors": "J. M. J. Bawagan",
+    "journal_name": "Indian Journal of Science & Technology",
+    "volume_issue": "Vol. 13 (2020)",
+    "indexed_in": "",
+    "doi_url": "http://www.indjst.org/index.php/indjst/article/view/149446/104588",
+    "submitted_at": "2020-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_pages": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Journal Article",
+    "title": "Restructuring loosely structured databases for generating local statistics",
+    "authors": "J. P. V. J. Albacea, J. M. Samaniego",
+    "journal_name": "Indian Journal of Science & Technology",
+    "volume_issue": "Vol. 12 (2019)",
+    "indexed_in": "",
+    "doi_url": "http://www.indjst.org/index.php/indjst/article/view/148891",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_pages": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Journal Article",
+    "title": "Measuring transcript relevance and certainty through sentence classification and semantic similarity analysis",
+    "authors": "C. Ronquillo, R. N. Recario",
+    "journal_name": "Philippine Computing Journal",
+    "volume_issue": "Vol. XIV (2019)",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_pages": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "Classification of Filipino meteorological disaster-related tweets using convolutional neural networks",
+    "authors": "K. B. De Luna, D. J. Mercado",
+    "conference_name": "UC First Faculty Forum, SEARCA",
+    "conference_location": "UPLB",
+    "conference_date": "July 2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "Odette: An autonomous water quality surface vehicle platform for water quality monitoring",
+    "authors": "M. Queliste, J. Hermocilla, J. Pabico",
+    "conference_name": "UC First Faculty Forum, SEARCA",
+    "conference_location": "UPLB",
+    "conference_date": "July 2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "LevEx: A tool for leaf venation extraction using image processing",
+    "authors": "A. K. D. Balangcod, L. Licnachan, D. J. Mercado, J. M. Samaniego, J. P. Pabico",
+    "conference_name": "11th Flora Malesiana Symposium",
+    "conference_location": "University of Brunei Darussalam",
+    "conference_date": "June 2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "Stock market sentiment analysis using finance related tweets towards stock price analysis",
+    "authors": "K. Tan, M. Clariño",
+    "conference_name": "15th National Natural Language Processing Research Symposium (15NNLPRS)",
+    "conference_location": "Legazpi",
+    "conference_date": "March 2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "Transcript relevance and certainty verification through sentence classification and semantic similarity analysis",
+    "authors": "C. Ronquillo, R. Recario",
+    "conference_name": "15th National Natural Language Processing Research Symposium (15NNLPRS)",
+    "conference_location": "Legazpi",
+    "conference_date": "March 2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "CUAP: A software package for codon usage patterns analysis",
+    "authors": "A. Carajay, J. Angeles, R. Marcelino, M. Clarino, K. Abriol-Santos, J. Samaniego",
+    "conference_name": "PCSC 2019",
+    "conference_location": "Manila",
+    "conference_date": "March 2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "Stitching images for surround viewing: A review and demonstration of state-of-the-art",
+    "authors": "D. dela Rosa, L. Lactuan, K. Jaen, M. Caraan et al.",
+    "conference_name": "3rd UPLB Interdisciplinary Humanities Research Conference (IHRC 2019)",
+    "conference_date": "2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "Geotagging and mapping of Rizal monuments in Laguna",
+    "authors": "J. Vaethbrueckner, M. Caraan, K. Jaen, D. dela Rosa et al.",
+    "conference_name": "3rd UPLB Interdisciplinary Humanities Research Conference (IHRC 2019)",
+    "conference_date": "2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "Design of a digital repository for 360-degree images",
+    "authors": "K. Jaen, D. dela Rosa, M. Caraan, J. Vaethbrueckner et al.",
+    "conference_name": "3rd UPLB Interdisciplinary Humanities Research Conference (IHRC 2019)",
+    "conference_date": "2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "Anaglipo ng Bahay ni Rizal sa Calamba",
+    "authors": "M. Caraan, J. Vaethbrueckner, K. Jaen, D. dela Rosa et al.",
+    "conference_name": "3rd UPLB Interdisciplinary Humanities Research Conference (IHRC 2019)",
+    "conference_date": "2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "Automated detection and counting of coconut palm in aerial images",
+    "authors": "Z. Arnejo, J. Pabico",
+    "conference_name": "ASTHRDP Graduate Scholar's Conference",
+    "conference_date": "2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "An artificial eye for supporting the mobility of visually impaired",
+    "authors": "M. Estremos, J. Pabico",
+    "conference_name": "First National Conference on Inclusive Education",
+    "conference_date": "2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "LevEx: A tool for leaf venation extraction using image processing",
+    "authors": "A. Balangcod, L. Licnachan, D. Mercado, J. Samaniego, J. Pabico",
+    "conference_name": "Flora Malesiana Symposium 11",
+    "conference_date": "2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "Odette: An autonomous surface vehicle platform for water quality monitoring",
+    "authors": "M. Queliste, J. Hermocilla, J. Pabico",
+    "conference_name": "Southeast Asian University Consortium for Graduate Education in Agriculture",
+    "conference_date": "2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "Circuity of city road networks in CALABARZON: A graph-theoretic approach",
+    "authors": "J. Pabico",
+    "conference_name": "2019 MSP CALABARZON Convention and General Assembly",
+    "conference_date": "2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "An artificial neural network model for counting coconut palm in aerial images of Mt. Makiling Forest Reserve",
+    "authors": "Z. Arnejo, N. Bantayan, J. Pabico",
+    "conference_name": "8th National Scientific Conference and General Assembly of the Restoration",
+    "conference_date": "2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "Geotagging and mapping of Rizal monuments in CALABARZON",
+    "authors": "J. Vaethbrueckner, M. Caraan, C. Bobiles, K. Jaen et al.",
+    "conference_name": "12th UPLB CAS Student-Faculty Research Conference (SFRC 2019)",
+    "conference_date": "2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "Rizal Shrine goes digital: A review of virtual reality frameworks",
+    "authors": "M. Caraan, J. Vaethbrueckner, C. Bobiles, K. Jaen et al.",
+    "conference_name": "12th UPLB CAS Student-Faculty Research Conference (SFRC 2019)",
+    "conference_date": "2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "Design of a stock trading system for non-professional traders",
+    "authors": "K. Pelaez, J. Pabico",
+    "conference_name": "12th UPLB CAS Student-Faculty Research Conference (SFRC 2019)",
+    "conference_date": "2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "TRACTOR: A system for feature extraction and classification of Tor traffic",
+    "authors": "M. de Robles, J. Hermocilla, J. Pabico",
+    "conference_name": "12th UPLB CAS Student-Faculty Research Conference (SFRC 2019)",
+    "conference_date": "2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Conference Proceedings Publication",
+    "title": "A memetic algorithm for generating spectral indices for remotely sensed imagery",
+    "authors": "I. M. H. Escamos, M. A. A. D. Clariño, J. A. C. Hermocilla, J. P. Pabico, C. L.",
+    "conference_name": "40th Asian Conference on Remote Sensing (ACRS 2019)",
+    "conference_location": "Korea",
+    "conference_date": "October 2019",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Journal Article",
+    "title": "Land use/land cover change detection and urban sprawl analysis in the Mount Makiling Forest Reserve watersheds and buffer zone, Philippines",
+    "authors": "M. Soriano, N. Hilvano, R. Garcia, A. J. Hao, A. Alegre, J. Cristino Tiburan",
+    "journal_name": "Environments",
+    "volume_issue": "Vol. 6 (2019)",
+    "journal_pages": "p. 9",
+    "indexed_in": "Scopus",
+    "doi_url": "http://dx.doi.org/10.3390/environments6020009",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Journal Article",
+    "title": "LabGIS: A real estate property geographical information system (GIS) for local government units",
+    "authors": "L. K. R. Lactuan, D. J. Mercado, J. M. Samaniego",
+    "journal_name": "Philippine e-Journal for Applied Research and Development",
+    "volume_issue": "Vol. 9 (2019)",
+    "journal_pages": "pp. 14–26",
+    "indexed_in": "",
+    "doi_url": "http://pejard.slu.edu.ph/vol.9/2019.08.10.pdf",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Journal Article",
+    "title": "A method of semi-supervised learning using Siamese neural network for disaster monitoring on Philippine social media",
+    "authors": "A. T. Marges, J. M. Samaniego",
+    "journal_name": "Philippine e-Journal for Applied Research and Development",
+    "volume_issue": "Vol. 9 (2019)",
+    "journal_pages": "pp. 27–39",
+    "indexed_in": "",
+    "doi_url": "http://pejard.slu.edu.ph/vol.9/2019.10.01.pdf",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2019",
+    "category": "Journal Article",
+    "title": "Feature selection for heartbeat classification using Naïve Bayes and K-nearest neighbor",
+    "authors": "C. C. L. Cepe, M. A. A. D. Clariño",
+    "journal_name": "Philippine e-Journal for Applied Research and Development",
+    "volume_issue": "Vol. 9 (2019)",
+    "journal_pages": "pp. 40–48",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2019-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2018",
+    "category": "Conference Proceedings Publication",
+    "title": "Technology acceptance as design and domestication: The case of SwineCaRT",
+    "authors": "R. L. Mendiola, K. J. M. Abriol-Santos, C. M. B. Arkaina, J. C. Punzalan",
+    "conference_name": "8th National Conference and 1st International Conference of ADCEP",
+    "conference_location": "UPLB",
+    "conference_date": "November 30–December 2, 2018",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2018-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2018",
+    "category": "Conference Proceedings Publication",
+    "title": "Exploring mathematical modeling towards agent-based model for leaf vein development",
+    "authors": "M. A. A. Clariño, E. Albacea",
+    "conference_name": "5th ACM Women in Computing-Philippines Celebration 2018",
+    "conference_location": "Legazpi City",
+    "conference_date": "November 24, 2018",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2018-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2018",
+    "category": "Conference Proceedings Publication",
+    "title": "Topic modeling of Facebook posts in the SAIS bulletin board group using HDBSCAN",
+    "authors": "J. I. M. Vital, K. J. M. Abriol-Santos",
+    "conference_name": "11th UPLB-CAS Student-Faculty Conference",
+    "conference_location": "UPLB",
+    "conference_date": "November 19, 2018",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2018-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2018",
+    "category": "Conference Proceedings Publication",
+    "title": "A method of semi-supervised learning using Siamese neural network for disaster monitoring on social media",
+    "authors": "A. Marges, J. Samaniego",
+    "conference_name": "11th UPLB-CAS Student-Faculty Conference",
+    "conference_location": "UPLB",
+    "conference_date": "November 19, 2018",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2018-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2018",
+    "category": "Conference Proceedings Publication",
+    "title": "CUAP: Codon Usage Analysis Package for the analysis of codon usage patterns",
+    "authors": "A. Carajay, J. G. Angeles, R. Marcelino, M. A. A. Clariño, K. J. Abriol-Santos, J. Samaniego",
+    "conference_name": "11th UPLB-CAS Student-Faculty Conference",
+    "conference_location": "UPLB",
+    "conference_date": "November 19, 2018",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2018-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2018",
+    "category": "Conference Proceedings Publication",
+    "title": "Feature selection for heartbeat classification using Naïve Bayes and KNN",
+    "authors": "(ICS Faculty)",
+    "conference_name": "NCITE 2018",
+    "conference_location": "Tuguegarao City",
+    "conference_date": "October 25–27, 2018",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2018-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2018",
+    "category": "Conference Proceedings Publication",
+    "title": "Feature selection for heartbeat classification using Naïve Bayes",
+    "authors": "C. C. Cepe, M. A. A. Clariño",
+    "conference_name": "ICE 2018",
+    "conference_location": "Cebu City",
+    "conference_date": "October 4–6, 2018",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2018-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2018",
+    "category": "Conference Proceedings Publication",
+    "title": "Automated extraction of information using machine learning and image processing in Philippine government-issued IDs",
+    "authors": "K. M. Macaraig, D. Mercado",
+    "conference_name": "ICE 2018",
+    "conference_location": "Cebu City",
+    "conference_date": "October 4–6, 2018",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2018-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2018",
+    "category": "Conference Proceedings Publication",
+    "title": "Design and fabrication of an autonomous surface drone for water quality monitoring",
+    "authors": "M. Queliste, J. Hermocilla, J. Pabico",
+    "conference_name": "7th RESPhil-SCENe National Scientific Conference and General Assembly",
+    "conference_location": "University of the Philippines Baguio",
+    "conference_date": "31 May–3 June 2018",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2018-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2018",
+    "category": "Journal Article",
+    "title": "Insertion sorter in P systems",
+    "authors": "D. P. Y. B., J. Ebron, J. Pabico",
+    "journal_name": "Journal of Physics: Conference Series",
+    "volume_issue": "Vol. 976 (2018)",
+    "journal_pages": "p. 012004",
+    "indexed_in": "Scopus",
+    "doi_url": "http://dx.doi.org/10.1088/1742-6596/976/1/012004",
+    "submitted_at": "2018-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2018",
+    "category": "Conference Proceedings Publication",
+    "title": "Sex-and-gender dimensions of key positions in recognized UPLB student organizations: Its five-year prevalence and progression",
+    "authors": "J. P. Lado, K. J. M. Abriol-Santos, M. C. Miranda, C. H. Hagosojos, J. E. Casquete, M. E. Mojica, N. M. Cadiz",
+    "conference_name": "First National Conference on Southern Luzon Studies",
+    "conference_location": "UPLB, Los Baños, Laguna",
+    "conference_date": "18–20 July 2018",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2018-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2018",
+    "category": "Conference Proceedings Publication",
+    "title": "Narrative instructional creation toolkit for interactive platforms for learning",
+    "authors": "T. Monserrat, F. Pitagan, E. Albacea",
+    "conference_name": "Asian CHI Symposium / ACM CHI 2018",
+    "conference_location": "Montreal, Canada",
+    "conference_date": "21–26 April 2018",
+    "indexed_in": "ACM Digital Library",
+    "doi_url": "",
+    "submitted_at": "2018-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2018",
+    "category": "Conference Proceedings Publication",
+    "title": "Counting and classification of coconut tree crowns in forest aerial image using digital image processing and artificial neural networks",
+    "authors": "Z. Arnejo, N. Bantayan, J. Pabico",
+    "conference_name": "53rd BIOTA Annual National Convention and Scientific Sessions (BIOTA 2018)",
+    "conference_location": "Iloilo City",
+    "conference_date": "5–7 April 2018",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2018-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2018",
+    "category": "Conference Proceedings Publication",
+    "title": "The acoustic properties of roasted coffee beans can determine the beans' variety",
+    "authors": "J. Pabico, K. Vivas, A. Bauson",
+    "conference_name": "53rd BIOTA Annual National Convention and Scientific Sessions (BIOTA 2018)",
+    "conference_location": "Iloilo City",
+    "conference_date": "5–7 April 2018",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2018-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2018",
+    "category": "Conference Proceedings Publication",
+    "title": "Rule-based multiple target monitoring in robot vision using partitioning",
+    "authors": "D. P. Y. Barfeh, V. Y. Mariano",
+    "conference_name": "2018 2nd International Conference on Control Engineering and Artificial Intelligence (CCEAI 2018)",
+    "conference_location": "Boracay",
+    "conference_date": "Jan. 19–21, 2018",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2018-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2018",
+    "category": "Journal Article",
+    "title": "Near-complete genome sequence of Ralstonia solanacearum T523, a Phylotype I tomato phytopathogen isolated from the Philippines",
+    "authors": "A. Montecillo, A. Raymundo, I. Papa, G. Aquino, A. Jacildo, P. Stothard, A. Rosana",
+    "journal_name": "Microbiology Resource Announcements",
+    "volume_issue": "Vol. 7 (2018)",
+    "indexed_in": "",
+    "doi_url": "http://dx.doi.org/10.1128/MRA.01048-18",
+    "submitted_at": "2018-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_pages": "",
+    "pages": ""
+  },
+  {
+    "year": "2018",
+    "category": "Journal Article",
+    "title": "Application of information technology in the delivery of student services of the Office of Student Affairs",
+    "authors": "J. Abriol-Santos, K. Abriol-Santos, M. Miranda, C. Hagosojos, N. Cadiz",
+    "journal_name": "UPLB Journal",
+    "volume_issue": "Vol. 16 (2018)",
+    "journal_pages": "pp. 1–17",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2018-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Journal Article",
+    "title": "Creating virtual corridors: Social network discovery and landscape patch connectivity of permaculture projects and initiatives on Facebook",
+    "authors": "J. J. M. Flores, R. J. Obrero, L. A. Gelisan, E. A. Foronda, R. L. Mendiola",
+    "journal_name": "International Journal on Open and Distance e-Learning (IJODeL)",
+    "volume_issue": "Vol. 3 (2017)",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_pages": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "Profiling waitlisted incoming students for future delinquency with an ensemble of statistical machine learning algorithms",
+    "authors": "M. L. Lauron, J. Pabico",
+    "conference_name": "18th National Student-Faculty Conference on the Statistical Sciences",
+    "conference_location": "UPLB",
+    "conference_date": "16 October 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Journal Article",
+    "title": "Speech emotion recognition: Features, techniques, and evaluation",
+    "authors": "M. A. A. D. Clariño",
+    "journal_name": "Philippine Computing Journal Dedicated Issue on Natural Language Processing",
+    "volume_issue": "Vol. XII (2017)",
+    "journal_pages": "pp. 1–7",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "Developing express benthic cover image analysis tools for coral reef imagery",
+    "authors": "V. Madrid, M. Soriano, E. Albacea",
+    "conference_name": "2nd International Science Graduate Scholars' Conference",
+    "conference_location": "Pasay City",
+    "conference_date": "May 24–25, 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "Computational modeling and simulation of leaf vein development using L-systems",
+    "authors": "M. A. A. D. Clariño, E. A. Albacea",
+    "conference_name": "2nd International Science Graduate Scholars' Conference",
+    "conference_location": "Pasay City",
+    "conference_date": "May 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "Automated sentiment analysis of commentaries in a health care professional (HCP) moderated page in Facebook",
+    "authors": "R. J. G. Obrero, I. T. C. Isip-Tan",
+    "conference_name": "3rd HealthXPH Healthcare and Social Media Summit",
+    "conference_location": "Cebu City",
+    "conference_date": "25 April 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "GIS-based solar facility location using an analytic hierarchy process and weighted goal programming approach",
+    "authors": "S. K. L. Borja, F. O. P. Jr., J. M. Samaniego, C. L. Khan, E. A. Albacea, D. M. Macandog",
+    "conference_name": "14th International Agricultural Engineering Conference and Exhibition",
+    "conference_location": "Legaspi City, Albay",
+    "conference_date": "April 23–29, 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "Multiple moving objects monitoring in robot vision",
+    "authors": "D. P. Y. Barfeh, E. Mendoza, V. Mariano",
+    "conference_name": "4th IEEE International Conference on Engineering Technologies and Applied Sciences (ICETAS-2017)",
+    "conference_location": "Bahrain",
+    "conference_date": "29 Nov–1 Dec 2017",
+    "indexed_in": "IEEE Xplore",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "Semi-automated counting of plasmodesmata on a leaf surface using image processing",
+    "authors": "J. R. Sanchez, L. R. Danila, F. R. Danila",
+    "conference_name": "SFRC, CAS, UPLB",
+    "conference_date": "20 November 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "Automated identification of plant species using leaf venations",
+    "authors": "A. K. D. Balangcod, J. P. Pabico",
+    "conference_name": "SFRC, CAS, UPLB",
+    "conference_date": "20 November 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "Multi-agent simulation of pursuit-evasion in dynamic graphs",
+    "authors": "J. M. T. Arriola, J. P. Pabico",
+    "conference_name": "SFRC, CAS, UPLB",
+    "conference_date": "20 November 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "Segmentation of coconut tree regions in forest aerial image of Mt. Makiling",
+    "authors": "Z. O. Arnejo, N. C. Bantayan, J. P. Pabico",
+    "conference_name": "SFRC, CAS, UPLB",
+    "conference_date": "20 November 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "Multi-hop messaging using Android Wi-Fi Direct",
+    "authors": "C. C. S. Templado, J. M. Samaniego",
+    "conference_name": "SFRC, CAS, UPLB",
+    "conference_date": "20 November 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "Analysis of coffee bean using digital image processing",
+    "authors": "P. D. B. Dionisio, K. J. M. Abriol-Santos",
+    "conference_name": "SFRC, CAS, UPLB",
+    "conference_date": "20 November 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_location": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "Integrator: A centralized help desk system for inquiries on student services in a state university",
+    "authors": "K. J. Abriol-Santos, C. Demafeliz, J. M. C. Abriol-Santos",
+    "conference_name": "15th National Conference on IT Education (NCITE 2017)",
+    "conference_location": "Tacloban, Leyte",
+    "conference_date": "19–21 October 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "Comparing texture granulometry and multiscale uniform local binary patterns in classifying coral benthic regions from mosaic images",
+    "authors": "V. R. Madrid, M. Soriano, E. Albacea",
+    "conference_name": "15th National Conference on IT Education (NCITE 2017)",
+    "conference_location": "Tacloban, Leyte",
+    "conference_date": "19–21 October 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "LabGIS: A real estate property geographical information system (GIS) for local government units",
+    "authors": "L. K. Lactuan, D. Mercado, J. Samaniego",
+    "conference_name": "15th National Conference on IT Education (NCITE 2017)",
+    "conference_location": "Tacloban, Leyte",
+    "conference_date": "19–21 October 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "Exploring RSSI for UAV-to-GCS distance estimation",
+    "authors": "G. C. Lara, J. A. Hermocilla, D. Mercado",
+    "conference_name": "15th National Conference on IT Education (NCITE 2017)",
+    "conference_location": "Tacloban, Leyte",
+    "conference_date": "19–21 October 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "Exploring mathematical modeling towards L-system based model for leaf vein development",
+    "authors": "M. A. A. Clariño, E. Albacea",
+    "conference_name": "PCSC 2017",
+    "conference_location": "Cebu City",
+    "conference_date": "16–18 March 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 277–282"
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "SkyLab: An extensible workflow web application for HPC on the cloud",
+    "authors": "V. P. Carpio, K. J. Abriol-Santos, J. A. Hermocilla",
+    "conference_name": "PCSC 2017",
+    "conference_location": "Cebu City",
+    "conference_date": "16–18 March 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 143–148"
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "Developing image analysis tools for benthic classification of coral reef mosaic imagery",
+    "authors": "(ICS Faculty)",
+    "conference_name": "PCSC 2017",
+    "conference_location": "Cebu City",
+    "conference_date": "16–18 March 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 267–276"
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "Literature mining on Dipterocarps: Towards better informed regeneration and reforestation in Luzon, Philippines",
+    "authors": "R. S. Gabud, R. Batista-Navarro, V. Mariano, E. Mendoza, S. Yap",
+    "conference_name": "INREM 2017",
+    "conference_location": "Manila",
+    "conference_date": "21–22 February 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Conference Proceedings Publication",
+    "title": "Classifying spatio-pixel data using pipelined binary neural networks",
+    "authors": "D. A. Luna, D. B. Magcale-Macandog, J. P. Pabico",
+    "conference_name": "Philippine National LiDAR Conference 2017 (PNLC 2017)",
+    "conference_location": "Cebu City",
+    "conference_date": "18–20 January 2017",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2017",
+    "category": "Journal Article",
+    "title": "Korero: Facilitating complex referencing of visual materials in asynchronous discussion interface",
+    "authors": "S. H. Chua, T.-J. K. P. Monserrat, D. Yoon, J. Kim, S. Zhao",
+    "journal_name": "Proceedings of the ACM on Human-Computer Interaction",
+    "volume_issue": "Vol. 1 (2017)",
+    "indexed_in": "ACM Digital Library",
+    "doi_url": "http://dx.doi.org/10.1145/3134669",
+    "submitted_at": "2017-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_pages": "",
+    "pages": ""
+  },
+  {
+    "year": "2016",
+    "category": "Conference Proceedings Publication",
+    "title": "Crowdsourcing-based annotation of emotions in Filipino and English tweets",
+    "authors": "F. R. Lapitan, R. T. Batista-Navarro, E. Albacea",
+    "conference_name": "6th Workshop on South and Southeast Asian Natural Language Processing (WSSANLP2016)",
+    "conference_location": "Osaka, Japan",
+    "conference_date": "December 2016",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 74–82"
+  },
+  {
+    "year": "2016",
+    "category": "Journal Article",
+    "title": "Exploring utility of formal concept analysis approach to coral reef assessment",
+    "authors": "V. R. M. Madrid, L. K. R. Lactuan, J. M. Corral",
+    "journal_name": "Journal of Environmental Science and Management",
+    "volume_issue": "2016",
+    "journal_pages": "pp. 47–57",
+    "indexed_in": "Scopus",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2016",
+    "category": "Conference Proceedings Publication",
+    "title": "An L-system approach to modeling auxin-driven vein development",
+    "authors": "M. A. A. D. Clariño, N. M. Cadiz, E. A. Albacea",
+    "conference_name": "9th UPLB CAS SFRC 2016",
+    "conference_location": "UPLB",
+    "conference_date": "November 2016",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2016",
+    "category": "Conference Proceedings Publication",
+    "title": "Philippine agricultural decision support based on real-time weather monitoring",
+    "authors": "M. G. C. B. Carandang, C. L. Khan",
+    "conference_name": "9th UPLB CAS SFRC 2016",
+    "conference_location": "UPLB",
+    "conference_date": "November 2016",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2016",
+    "category": "Conference Proceedings Publication",
+    "title": "BERTUD: Building footprint extraction and regularization in LiDAR datasets through utilization of a distributed system",
+    "authors": "I. M. H. Escamos, A. R. C. Roberto, J. A. C. Hermocilla, M. D. Queliste, E. R. Abucay, G. K. L. Inciong",
+    "conference_name": "37th Asian Conference of Remote Sensing (ACRS 2016)",
+    "conference_location": "Colombo, Sri Lanka",
+    "conference_date": "October 17–21, 2016",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2016",
+    "category": "Conference Proceedings Publication",
+    "title": "OSv-MPI: A prototype MPI implementation for the OSv cloud operating system",
+    "authors": "J. A. Hermocilla, E. Albacea",
+    "conference_name": "NCITE 2016",
+    "conference_location": "Dipolog City",
+    "conference_date": "October 2016",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 20–22"
+  },
+  {
+    "year": "2016",
+    "category": "Conference Proceedings Publication",
+    "title": "Measuring the maximum functional arm reach through digital dynamic anthropometry",
+    "authors": "M. C. D. Torre, K. J. Abriol-Santos, J. Pabico",
+    "conference_name": "NCITE 2016",
+    "conference_location": "Dipolog City",
+    "conference_date": "October 2016",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 20–22"
+  },
+  {
+    "year": "2016",
+    "category": "Conference Proceedings Publication",
+    "title": "Performance evaluation of ensemble learning methods using tree-based component classifiers on bioacoustic datasets",
+    "authors": "R. Jangit, J. M. Samaniego",
+    "conference_name": "NCITE 2016",
+    "conference_location": "Dipolog City",
+    "conference_date": "October 2016",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 20–22"
+  },
+  {
+    "year": "2016",
+    "category": "Journal Article",
+    "title": "Support vector machine for seagrass and benthic bottom types classification using high resolution coastal digital aerial images",
+    "authors": "E. O. Afriyie, C. L. Khan, H. M. Nacorda",
+    "journal_name": "Far East Journal of Electronics and Communication",
+    "volume_issue": "Vol. 2 (2016)",
+    "journal_pages": "pp. 69–76",
+    "indexed_in": "Scopus",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2016",
+    "category": "Journal Article",
+    "title": "Automatic text summarization using ChainRank: A hybrid technique",
+    "authors": "M. Angeles, N. Laxina, M. A. A. D. Clariño, R. D. Mercado",
+    "journal_name": "Philippine Computing Journal Dedicated Issue on Natural Language Processing",
+    "volume_issue": "Vol. XI (2016)",
+    "journal_pages": "pp. 24–30",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2016",
+    "category": "Journal Article",
+    "title": "Evaluation of speech emotion recognition based on support vector machines with mixture model super vectors",
+    "authors": "M. A. A. D. Clariño, M. M. Alfonso",
+    "journal_name": "Journal of Sciences, Technology and Arts Research",
+    "volume_issue": "Vol. 2 (2016)",
+    "journal_pages": "pp. 25–34",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2016",
+    "category": "Conference Proceedings Publication",
+    "title": "Sociagraph: A keyword extractor and sentiment analyser using support vector machines",
+    "authors": "J. Ferrera, K. J. H. Magno",
+    "conference_name": "12th National Natural Language Processing Research Symposium (12NNLPRS)",
+    "conference_location": "Dumaguete City",
+    "conference_date": "April 2016",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 22–23"
+  },
+  {
+    "year": "2016",
+    "category": "Conference Proceedings Publication",
+    "title": "Re-engineering ICT-enabled protocols for traceable pork",
+    "authors": "J. P. Pabico, R. S. Vega",
+    "conference_name": "PSAE 2016",
+    "conference_location": "Ilocos Norte",
+    "conference_date": "April 2016",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 24–30"
+  },
+  {
+    "year": "2016",
+    "category": "Conference Proceedings Publication",
+    "title": "Utilizing ICT in facilitating fast and secure communication in live swine commerce",
+    "authors": "E. N. A. Tolorio, C. M. B. Arkaina, K. J. H. Magno, J. P. Pabico",
+    "conference_name": "PSAE 2016",
+    "conference_location": "Ilocos Norte",
+    "conference_date": "April 2016",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 24–30"
+  },
+  {
+    "year": "2016",
+    "category": "Conference Proceedings Publication",
+    "title": "A shift from traditional to electronic commerce: Enhancing the efficiency of live breeder swine commerce through web technology",
+    "authors": "C. M. B. Arkaina, E. N. A. Tolorio, K. J. H. Magno, J. P. Pabico",
+    "conference_name": "PSAE 2016",
+    "conference_location": "Ilocos Norte",
+    "conference_date": "April 2016",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 24–30"
+  },
+  {
+    "year": "2016",
+    "category": "Conference Proceedings Publication",
+    "title": "A new XML-based competitive architecture for search engines",
+    "authors": "I. Rasekh, E. A. Albacea",
+    "conference_name": "PCSC 2016",
+    "conference_location": "Puerto Princesa City, Palawan",
+    "conference_date": "March 2016",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 16–18"
+  },
+  {
+    "year": "2016",
+    "category": "Conference Proceedings Publication",
+    "title": "Improved sampling techniques for learning an imbalanced data set",
+    "authors": "M. L. C. Lauron, J. P. Pabico",
+    "conference_name": "PCSC 2016",
+    "conference_location": "Puerto Princesa City, Palawan",
+    "conference_date": "March 2016",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 16–18"
+  },
+  {
+    "year": "2016",
+    "category": "Conference Proceedings Publication",
+    "title": "Experiences in collaborative implementation of a multi-user interactive virtual learning world",
+    "authors": "J. P. Pabico, M. V. Rivera, N. R. Valdez",
+    "conference_name": "PSUCCESS 2016",
+    "conference_location": "Vigan City, Ilocos Sur",
+    "conference_date": "February 2016",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 22–24"
+  },
+  {
+    "year": "2016",
+    "category": "Conference Proceedings Publication",
+    "title": "Ensemble learning using selected algorithms for solutions of classification problems in data mining",
+    "authors": "M. Lauron, J. Pabico",
+    "conference_name": "First International DOST-SEI ASTHRDP-NSC Scholars' Conference",
+    "conference_location": "Manila",
+    "conference_date": "7–8 April 2016",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2016",
+    "category": "Conference Proceedings Publication",
+    "title": "Exploring simulation environments with L-system based models towards simulation of leaf vein development",
+    "authors": "M. Clariño, E. Albacea, E. Mendoza, X.-G. Zhu, N. Cadiz, V. Mariano",
+    "conference_name": "First International DOST-SEI ASTHRDP-NSC Scholars' Conference",
+    "conference_location": "Manila",
+    "conference_date": "7–8 April 2016",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": ""
+  },
+  {
+    "year": "2016",
+    "category": "Conference Proceedings Publication",
+    "title": "Modeling shapes using uniform cubic B-splines for rice seed image analysis",
+    "authors": "C. N. M. Peralta, J. P. Pabico, V. Y. Mariano",
+    "conference_name": "2016 IEEE Sixth International Conference on Communications and Electronics (ICCE)",
+    "conference_location": "Ha Long, Vietnam",
+    "conference_date": "27–29 July 2016",
+    "indexed_in": "IEEE Xplore",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "journal_name": "",
+    "volume_issue": "",
+    "pages": "pp. 326–331"
+  },
+  {
+    "year": "2016",
+    "category": "Journal Article",
+    "title": "An analysis of network activity in a public university",
+    "authors": "R. S. Maniaol, D. J. Mercado",
+    "journal_name": "Philippine Computing Journal",
+    "volume_issue": "Vol. 11 (2016)",
+    "journal_pages": "pp. 11–18",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "pages": ""
+  },
+  {
+    "year": "2016",
+    "category": "Journal Article",
+    "title": "Project monitoring and evaluation system for SETUP",
+    "authors": "V. D. Retuya, C. L. Khan",
+    "journal_name": "International Journal of Computer Science and Electronics Engineering (IJCSEE)",
+    "volume_issue": "Vol. 4 (2016)",
+    "indexed_in": "",
+    "doi_url": "",
+    "submitted_at": "2016-06-01T00:00:00Z",
+    "submitter": "",
+    "email": "",
+    "abstract": "",
+    "funding": "",
+    "conference_name": "",
+    "conference_location": "",
+    "conference_date": "",
+    "journal_pages": "",
+    "pages": ""
+  }
+];
+  // Seed data is kept in memory only (not in sessionStorage)
+  ALL_ENTRIES = [...REAL_PUBLICATIONS];
+},
+    {category:'Journal Article',title:'Privacy-Preserving Federated Learning in Healthcare: A Systematic Review',authors:'M. Santos, L. Lim, R. Bautista',submitter:'Dr. Maria Santos',email:'msantos@uplb.edu.ph',year:'2024',journal_name:'ACM Transactions on Privacy and Security',volume_issue:'Vol. 27, No. 2',journal_pages:'pp. 1–34',doi_url:'https://doi.org/10.1145/example',indexed_in:'Scopus',funding:'DOST-PCHRD Grant No. 2023-01',submitted_at:'2024-04-12T10:00:00Z'},
+    {category:'Conference Proceedings Publication',title:'Explainable AI for Clinical Decision Support in Philippine Hospital Settings',authors:'R. Bautista, J. Reyes',submitter:'Dr. Ramon Bautista',email:'rbautista@uplb.edu.ph',year:'2023',conference_name:'ACM CHI Conference on Human Factors in Computing Systems',conference_location:'Hamburg, Germany',pages:'pp. 88–101',indexed_in:'ACM Digital Library',submitted_at:'2023-05-05T09:00:00Z'},
+    {category:'Journal Article',title:'Graph-Based Malware Detection Using Dynamic Behavioral Analysis',authors:'A. Santos, D. Villanueva',submitter:'Dr. Ana Santos',email:'asantos@uplb.edu.ph',year:'2023',journal_name:'Computers & Security',volume_issue:'Vol. 128',journal_pages:'pp. 103142',indexed_in:'Scopus',submitted_at:'2023-03-18T14:00:00Z'},
+    {category:'Conference Proceedings Publication',title:'Low-Resource Machine Translation for Philippine Languages Using Transfer Learning',authors:'L. Lim, M. Cruz',submitter:'Prof. Luz Lim',email:'llim@uplb.edu.ph',year:'2022',conference_name:'Annual Conference of the ACL',conference_location:'Dublin, Ireland',pages:'pp. 1102–1115',indexed_in:'ACM Digital Library',submitted_at:'2022-07-30T11:00:00Z'},
+    {category:'Journal Article',title:'Automated Crop Disease Detection Using Deep Convolutional Neural Networks',authors:'D. Villanueva, J. Reyes, L. Lim',submitter:'Dr. Daniel Villanueva',email:'dvillanueva@uplb.edu.ph',year:'2022',journal_name:'Computers and Electronics in Agriculture',volume_issue:'Vol. 196',journal_pages:'pp. 106855',indexed_in:'Web of Science',funding:'DOST-PCAARRD',submitted_at:'2022-02-14T08:30:00Z'},
+    {category:'Conference Proceedings Publication',title:'Blockchain-Based Credential Verification for Philippine Higher Education',authors:'M. Cruz, R. Bautista',submitter:'Prof. Marco Cruz',email:'mcruz@uplb.edu.ph',year:'2021',conference_name:'IEEE Blockchain Conference',conference_location:'Melbourne, Australia',pages:'pp. 45–52',indexed_in:'IEEE Xplore',submitted_at:'2021-11-22T09:00:00Z'},
+  ];
+  demo.forEach(saveLocal);
+  ALL_ENTRIES = merge([], demo);
+}
+
+/* ── INIT ─────────────────────────────────────────────────────────── */
+window.addEventListener('load', async () => {
+  if (!getLocal().length) seedDemo();
+  await loadAll();
+});
+window.addEventListener('resize', drawChart);
+</script>
+
+<!--
+════════════════════════════════════════════════════════════════════════
+  GOOGLE APPS SCRIPT — paste in your Apps Script project
+════════════════════════════════════════════════════════════════════════
+const SHEET_NAME = 'Submissions';
+
+function doPost(e) {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet   = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
+  const d     = JSON.parse(e.postData.contents);
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(['Timestamp','Category','Publication Type','Submitter','Email','Title','Authors',
+      'Year','Venue','Location/Volume','Date/Pages','Pages/DOI','Link to Publication','Abstract','Funding','Indexed In']);
+  }
+  sheet.appendRow([
+    d.submitted_at, d.category, d.pub_type||'', d.submitter, d.email, d.title, d.authors, d.year,
+    d.conference_name||d.journal_name||'',
+    d.conference_location||d.volume_issue||'',
+    d.conference_date||d.journal_pages||'',
+    d.pages||d.doi_url||'',
+    d.pub_link||'',
+    d.abstract||'', d.funding||'', d.indexed_in||''
+  ]);
+  return ContentService
+    .createTextOutput(JSON.stringify({status:'ok'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  const sheet   = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  if (!sheet) return ContentService.createTextOutput(JSON.stringify({entries:[]}))
+    .setMimeType(ContentService.MimeType.JSON);
+  const rows    = sheet.getDataRange().getValues();
+  const headers = rows[0];
+  const entries = rows.slice(1).map(r => {
+    const obj = {};
+    headers.forEach((h,i) => obj[h.toLowerCase().replace(/ |\//g,'_')] = r[i]);
+    return obj;
+  });
+  return ContentService
+    .createTextOutput(JSON.stringify({entries}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+════════════════════════════════════════════════════════════════════════
+-->
+</body>
+</html>
